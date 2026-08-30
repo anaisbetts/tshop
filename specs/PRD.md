@@ -11,9 +11,6 @@ still work.
 The name is an homage to the 3DS's hShop. The goal is similarly direct: make
 finding and installing software on a game console pleasant.
 
-This document defines the product. It deliberately leaves framework choices,
-service design, data formats, and other implementation details for later.
-
 ## Status
 
 tShop is at the product-definition stage. Version one will prove that a small,
@@ -57,9 +54,9 @@ touchless devices can follow once the handheld experience is solid.
 
 ### Curated means accountable
 
-tShop has one first-party catalog. The project decides what appears in it,
-verifies every entry, and owns mistakes. Users never have to choose
-between anonymous sources or guess which manifest to trust.
+tShop has one first-party catalog. For the initial release, the project decides
+what appears in it, verifies every entry, and owns mistakes. Users never have to
+choose between anonymous sources or guess which manifest to trust.
 
 A smaller catalog with 30 excellent entries is more useful than 300 entries
 with broken links, wrong packages, and placeholder art.
@@ -67,7 +64,7 @@ with broken links, wrong packages, and placeholder art.
 ### It should look like a game console
 
 The visual reference is the Nintendo 3DS home menu, with a nod to launchers
-such as iisu. Apps live in a playful grid of square tiles rather than a
+such as iiSU. Apps live in a playful grid of square tiles rather than a
 settings-style list.
 
 Good artwork is part of the product, not decoration to add later. Every entry
@@ -357,4 +354,3 @@ justify it?
 release?
 - When does recurring maintenance cost justify a Patreon or similar
 funding model?
-
