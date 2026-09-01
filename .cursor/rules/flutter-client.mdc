@@ -1,0 +1,34 @@
+---
+description: Flutter client — vendored SDK (flutterw/dartw), versions, setup, codegen, analyze, build
+globs:
+  - client/**/*
+alwaysApply: false
+---
+
+# Vendored Flutter toolchain (critical)
+
+- Always use **`./flutterw`** (Unix/macOS/Linux) or **`./flutterw.cmd`** (Windows) instead of a global `flutter` or manually pointing at an SDK.
+- For Dart commands (`dart run`, `dart format`, codegen, etc.), use **`./dartw`** or **`./dartw.cmd`** instead of a global `dart`. That pins formatting, analysis, and other Dart tooling to the vendored Flutter SDK.
+
+Run wrapper commands from **`client/`** (or use explicit paths like `client/flutterw` from the repo root).
+
+```bash
+cd client
+./flutterw pub get
+./flutterw pub run build_runner build --delete-conflicting-outputs
+./flutterw analyze    # lint
+./flutterw build web  # build for web
+```
+
+# Riverpod architecture
+
+- Use Riverpod for shared cross-route state, asynchronous domain state, dependency injection, keyed state families, and resources that need lifecycle cleanup. Keep animation, focus, temporary form values, and other widget-local UI state in the widget.
+- For new mutable state, use Riverpod 3 `Notifier`/`AsyncNotifier`; do not add new `StateNotifier`, `StateNotifierProvider`, or `flutter_riverpod/legacy.dart` usage. Migrate existing legacy providers only as focused work.
+- Keep domain services and controllers independent of Riverpod. Resolve dependencies in the provider layer and pass explicit constructor arguments; never pass `Ref` or `WidgetRef` into a domain object.
+- In widgets, `watch` render state, `listen` for UI side effects, and `read` notifiers only from event handlers or lifecycle coordination. Do not use `ProviderScope.containerOf` when a `WidgetRef` can be passed explicitly.
+- Every family must make its lifetime intentional: prefer `autoDispose` for route/entity-scoped state; document why a family is kept alive and ensure subscriptions, timers, and other resources are disposed.
+- Place providers in feature-specific state files. Do not add new cross-feature barrel exports or screen-local providers; import the defining feature file directly when adding new code.
+- Providers should expose state, dependencies, or derived values. Put startup sequencing and one-shot side effects in an explicit coordinator initialized at the composition root, with ownership and disposal visible.
+- This project uses hand-written providers. Do not introduce Riverpod annotation/codegen ad hoc; changing provider-generation strategy requires a deliberate project-wide decision.
+- Use provider overrides as test seams for infrastructure. Prefer one documented `ProviderContainer`/`UncontrolledProviderScope` harness pattern over bespoke setup.
+- Treat `riverpod_lint` diagnostics as required analyzer feedback. Do not suppress them without a specific documented reason.
