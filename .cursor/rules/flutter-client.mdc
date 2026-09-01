@@ -1,14 +1,15 @@
 ---
-description: Flutter client — vendored SDK (flutterw/dartw), versions, setup, codegen, analyze, build
+description: Flutter client — fvm via flutterw/dartw, versions, setup, codegen, analyze, build
 globs:
   - client/**/*
 alwaysApply: false
 ---
 
-# Vendored Flutter toolchain (critical)
+# Flutter toolchain (fvm)
 
-- Always use **`./flutterw`** (Unix/macOS/Linux) or **`./flutterw.cmd`** (Windows) instead of a global `flutter` or manually pointing at an SDK.
-- For Dart commands (`dart run`, `dart format`, codegen, etc.), use **`./dartw`** or **`./dartw.cmd`** instead of a global `dart`. That pins formatting, analysis, and other Dart tooling to the vendored Flutter SDK.
+- Always use **`./flutterw`** (Unix/macOS/Linux) or **`./flutterw.cmd`** (Windows) instead of a global `flutter`. The wrappers run `fvm flutter` against the version in `.fvmrc`.
+- For Dart commands (`dart run`, `dart format`, codegen, etc.), use **`./dartw`** or **`./dartw.cmd`** (`fvm dart`).
+- FVM must be installed globally. If a wrapper says it is missing, install it from https://fvm.app.
 
 Run wrapper commands from **`client/`** (or use explicit paths like `client/flutterw` from the repo root).
 
