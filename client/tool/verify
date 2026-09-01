@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
+
+./dartw format --set-exit-if-changed .
+./flutterw analyze --fatal-infos
+./flutterw test
+./flutterw build web
