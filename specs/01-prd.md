@@ -95,11 +95,99 @@ fallback for unfinished controller navigation.
 tShop itself is Free Software. If the project grows enough to need ongoing
 funding, recurring community support such as Patreon is the preferred model.
 
-Version one does not depend on user accounts, advertising, or analytics. The
-project has not yet decided whether to collect usage data. If it does, tShop
-will document exactly what it collects, operate the system itself, and publish
-the resulting dashboards. Data collection should never become a hidden part of
-the product.
+Version one does not depend on user accounts or advertising. It does collect
+self-hosted, anonymized package download counts. That is a product feature,
+not an implementation leftover: popularity order, catalog priority, and the
+public stats dashboard all come from it.
+
+tShop operates the collector itself. There is no third-party analytics SDK
+and no client-side telemetry. The public dashboard is the complete dataset.
+If a number is not on that page, tShop does not have it. Data collection
+should never become a hidden part of the product.
+
+The short policy lives in [What tShop knows about you](#what-tshop-knows-about-you).
+It also appears in the app's About screen and on the dashboard itself.
+
+## What tShop knows about you
+
+tShop counts completed APK downloads. That is the entire analytics
+system. There is no account, no device identifier, no crash reporter,
+and no SDK phoning home from the handheld.
+
+The download host sees a normal HTTP request. It then writes down only
+what the public dashboard shows. If a field is not on that page, it
+was discarded.
+
+### What is stored
+
+Each completed download increments one row:
+
+- Catalog entry (the Android package)
+- Approved version that was fetched
+- APK variant, when the release has more than one
+- UTC day of the completed transfer
+- A count
+
+Those daily totals are the dataset. Popularity order in the catalog is
+derived from them. The public dashboard displays them.
+
+A download counts when the client finishes fetching the APK. Partial
+transfers, retries, and HTTP range resumes are not extra events.
+
+### What is discarded
+
+The host necessarily sees a source IP, a user-agent, and the usual
+request headers. None of those are written to the analytics store.
+tShop does not keep:
+
+- IP addresses
+- User-agent strings
+- Device or advertising identifiers
+- Which other apps are on the device
+- Catalog, artwork, or search traffic
+- Whether the user accepted Android's install prompt after the
+  download
+
+Catalog and asset fetches are ordinary static files. They are not
+analytics events.
+
+### Retention
+
+Daily package totals are kept indefinitely. They are public popularity
+data, not a dossier.
+
+If the download host writes ordinary web-server access logs, those
+logs may retain client IPs for at most seven days for operations
+(abuse, outages). They are not the analytics source, they are not
+joined to the dashboard, and they are deleted after that window.
+
+### Who can see it
+
+Everyone sees the same page. Project maintainers use it to decide
+catalog priority and tile order. There is no private operator view
+with extra fields, no export of request-level data, and no third-party
+analytics vendor.
+
+The About screen in the app quotes this policy and links to the
+dashboard. Users should be able to check that the numbers on the page
+are the numbers that ordered the grid.
+
+### Privacy Mode
+
+Settings includes a switch:
+
+**Privacy Mode.** Do not send any anonymized information to the shop.
+
+It is off by default. When it is on, Install and Update fetch the APK
+from the publisher's upstream URL instead of tShop's download host.
+tShop never sees that request, so it cannot count it.
+
+Privacy Mode does not change catalog or artwork fetches. Those stay on
+tShop's static hosting and are not analytics events.
+
+The catalog carries both URLs on every APK variant so the client can
+switch locally. If the publisher's host is down, a Privacy Mode
+download fails. tShop must not silently fall back to the counted URL.
 
 ## The catalog
 
@@ -168,13 +256,14 @@ For every update, the catalog pipeline should confirm at least:
 - Its basic metadata can be read successfully
 
 Only releases that pass validation enter the signed catalog. The published
-entry contains the approved version and a direct download location. Every
-tShop client therefore sees the same answer, and one broken upstream release
-cannot break updates for the entire installed base.
+entry contains the approved version, tShop's counted download URL, and
+the publisher's upstream URL. Every tShop client therefore sees the
+same approved release. Privacy Mode is the one case that leaves tShop's
+host: it downloads that same validated file from upstream.
 
-The first release does not need to mirror APKs. tShop may download from the
-publisher's upstream distribution while owning the metadata and validation
-around it.
+Approved APKs are served through tShop's own download host by default,
+either rehosted or proxied from the publisher. The host exists so
+downloads can be counted without a client-side tracker.
 
 ## The app experience
 
@@ -266,6 +355,11 @@ Version one includes:
 - A first-party catalog containing roughly 30 to 50 vetted apps
 - Server-side release monitoring and validation
 - Consistent artwork and useful metadata for every catalog entry
+- A self-hosted download host that counts completed APK fetches
+- A public stats dashboard of those counts, the same numbers the
+  project uses
+- Privacy Mode, which fetches APKs from the publisher instead of the
+  counted host
 
 ### Success criteria
 
@@ -294,6 +388,9 @@ browser, and nobody has to curse at updates.
 - Personalized recommendations
 - Featured banners and editorial collections
 - Open community submissions to the catalog
+- Client-side telemetry, crash-reporting SDKs, or third-party
+  analytics
+- Unique-user, unique-device, or install-success tracking
 
 These exclusions keep the first release focused. They are not promises
 that tShop will never support the feature.
@@ -348,8 +445,6 @@ The first implementation plan should return to these questions:
 fragmented?
 - What is the minimum screenshot requirement when an upstream project
 has poor assets?
-- Should tShop collect any usage data, and what user benefit would
-justify it?
 - What catalog contribution process makes sense after the initial
 release?
 - When does recurring maintenance cost justify a Patreon or similar
