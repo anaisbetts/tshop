@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# Launch, doctor, and stop a disposable tShop Flutter web instance.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+control-tshop <launch|doctor|url|stop>
+
+Environment:
+  TSHOP_VERIFY_HOST          bind/check host (default 127.0.0.1)
+  TSHOP_VERIFY_PORT          listen port (default 4173)
+  TSHOP_VERIFY_SKIP_BUILD    set to 1 to serve an existing client/build/web
+  TSHOP_VERIFY_STATE_DIR     override the per-port state directory
+
+Never drive an instance this command did not start. Never kill by process name.
+EOF
+}
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/../../../.." && pwd)"
+client_dir="$repo_root/client"
+web_dir="$client_dir/build/web"
+
+host="${TSHOP_VERIFY_HOST:-127.0.0.1}"
+port="${TSHOP_VERIFY_PORT:-4173}"
+state_dir="${TSHOP_VERIFY_STATE_DIR:-/tmp/tshop-verify-$port}"
+pid_file="$state_dir/pid"
+log_file="$state_dir/server.log"
+url="http://$host:$port/"
+
+die() {
+  echo "control-tshop: $*" >&2
+  exit 1
+}
+
+running_pid() {
+  if [[ ! -f "$pid_file" ]]; then
+    return 1
+  fi
+  local pid
+  pid="$(cat "$pid_file")"
+  if [[ ! "$pid" =~ ^[0-9]+$ ]]; then
+    return 1
+  fi
+  kill -0 "$pid" 2>/dev/null
+}
+
+owned_cmdline() {
+  local pid="$1"
+  local cmdline
+  cmdline="$(tr '\0' ' ' <"/proc/$pid/cmdline")"
+  [[ "$cmdline" == *"http.server"* && "$cmdline" == *"$port"* && "$cmdline" == *"$web_dir"* ]]
+}
+
+port_listener_pids() {
+  ss -ltnp 2>/dev/null | awk -v p=":$port" '$4 ~ p"$" { print }'
+}
+
+cmd_url() {
+  printf '%s\n' "$url"
+}
+
+cmd_doctor() {
+  [[ -f "$pid_file" ]] || die "no pid file at $pid_file (nothing launched on port $port)"
+  local pid
+  pid="$(cat "$pid_file")"
+  kill -0 "$pid" 2>/dev/null || die "pid $pid from $pid_file is not running"
+  owned_cmdline "$pid" || die "pid $pid is not the control-tshop http.server for $web_dir on $port"
+  local html
+  html="$(curl -fsS --max-time 3 "$url")" || die "GET $url failed"
+  [[ "$html" == *"<title>tshop</title>"* ]] || die "$url is not the tShop Flutter shell (missing <title>tshop</title>)"
+  [[ "$html" == *"flutter_bootstrap.js"* ]] || die "$url is not the tShop Flutter shell (missing flutter_bootstrap.js)"
+  cat <<EOF
+ok
+url=$url
+pid=$pid
+port=$port
+web_dir=$web_dir
+state_dir=$state_dir
+EOF
+}
+
+cmd_stop() {
+  if [[ -f "$pid_file" ]]; then
+    local pid
+    pid="$(cat "$pid_file")"
+    if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+      if owned_cmdline "$pid"; then
+        kill "$pid"
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+          kill -0 "$pid" 2>/dev/null || break
+          sleep 0.1
+        done
+        if kill -0 "$pid" 2>/dev/null; then
+          kill -9 "$pid" 2>/dev/null || true
+        fi
+      else
+        echo "control-tshop: refusing to kill pid $pid (cmdline is not this instance)" >&2
+      fi
+    fi
+  fi
+  rm -rf "$state_dir"
+}
+
+cmd_launch() {
+  if running_pid; then
+    die "already running pid=$(cat "$pid_file") at $url. Run control-tshop stop first, or use another TSHOP_VERIFY_PORT."
+  fi
+  if [[ -n "$(port_listener_pids)" ]]; then
+    die "port $port is already in use by something else. Choose TSHOP_VERIFY_PORT or stop that listener. Refusing to share the port."
+  fi
+
+  [[ -x "$client_dir/flutterw" ]] || die "missing $client_dir/flutterw"
+  if [[ "${TSHOP_VERIFY_SKIP_BUILD:-}" != "1" ]]; then
+    (cd "$client_dir" && ./flutterw build web)
+  fi
+  [[ -f "$web_dir/index.html" ]] || die "missing $web_dir/index.html; run without TSHOP_VERIFY_SKIP_BUILD"
+
+  mkdir -p "$state_dir"
+  : >"$log_file"
+  # setsid so the server survives the launching shell (Cursor Shell kills the job group).
+  setsid python3 -m http.server "$port" --bind "$host" --directory "$web_dir" >"$log_file" 2>&1 < /dev/null &
+  local pid=$!
+  printf '%s\n' "$pid" >"$pid_file"
+
+  local i
+  for i in $(seq 1 50); do
+    if curl -fsS --max-time 1 "$url" >/dev/null 2>&1; then
+      cmd_doctor
+      return 0
+    fi
+    if ! kill -0 "$pid" 2>/dev/null; then
+      cmd_stop
+      die "http.server exited before it answered. log: $log_file"
+    fi
+    sleep 0.1
+  done
+  cmd_stop
+  die "timed out waiting for $url. log: $log_file"
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  launch) cmd_launch ;;
+  doctor) cmd_doctor ;;
+  url) cmd_url ;;
+  stop) cmd_stop ;;
+  -h | --help | help | "")
+    usage
+    [[ -n "$cmd" ]]
+    ;;
+  *)
+    usage >&2
+    die "unknown command: $cmd"
+    ;;
+esac
