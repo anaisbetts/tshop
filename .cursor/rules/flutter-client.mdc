@@ -1,5 +1,5 @@
 ---
-description: Flutter client — fvm via flutterw/dartw, versions, setup, codegen, analyze, build
+description: Flutter client — fvm via flutterw/dartw, verify, Talker, Riverpod hooks
 globs:
   - client/**/*
 alwaysApply: false
@@ -7,21 +7,26 @@ alwaysApply: false
 
 # Flutter toolchain (fvm)
 
-- Always use **`./flutterw`** (Unix/macOS/Linux) or **`./flutterw.cmd`** (Windows) instead of a global `flutter`. The wrappers run `fvm flutter` against the version in `.fvmrc`.
-- For Dart commands (`dart run`, `dart format`, codegen, etc.), use **`./dartw`** or **`./dartw.cmd`** (`fvm dart`).
-- FVM must be installed globally. If a wrapper says it is missing, install it from https://fvm.app.
+Always use `./flutterw` (Unix) or `./flutterw.cmd` (Windows), never a global `flutter`. The wrappers run `fvm flutter` against `.fvmrc`. For Dart (`format`, `run`), use `./dartw` or `./dartw.cmd`.
 
-Run wrapper commands from **`client/`** (or use explicit paths like `client/flutterw` from the repo root).
+FVM must be installed globally. If a wrapper says it is missing, install it from https://fvm.app.
+
+Run wrapper commands from `client/` (or `client/flutterw` from the repo root).
+
+Before you call a change done, run `./tool/verify` from `client/`. That is format `--set-exit-if-changed`, `analyze --fatal-infos`, `test`, and `build web`. Do not skip `test/`. `build web` must stay green.
 
 ```bash
 cd client
-./flutterw pub get
-./flutterw pub run build_runner build --delete-conflicting-outputs
-./flutterw analyze    # lint
-./flutterw build web  # build for web
+./tool/verify
 ```
 
+Debug Android installs as `dev.anais.tshop.dev` (`applicationIdSuffix = ".dev"` on the debug build type). Leave that suffix in place. Release stays `dev.anais.tshop`.
+
+Log through Talker. Do not call `print`. `avoid_print` stays on.
+
 # Riverpod architecture
+
+Use `hooks_riverpod` and `HookConsumerWidget` (or `ConsumerWidget` when there are no hooks). Do not add `flutter_riverpod` as a second direct dependency.
 
 - Use Riverpod for shared cross-route state, asynchronous domain state, dependency injection, keyed state families, and resources that need lifecycle cleanup. Keep animation, focus, temporary form values, and other widget-local UI state in the widget.
 - For new mutable state, use Riverpod 3 `Notifier`/`AsyncNotifier`; do not add new `StateNotifier`, `StateNotifierProvider`, or `flutter_riverpod/legacy.dart` usage. Migrate existing legacy providers only as focused work.
