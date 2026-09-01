@@ -170,7 +170,9 @@ Selecting any tile opens App Detail.
 
 - Update notifications on or off. Background update checks are always
   on; there is no switch for them and no automatic application of
-  updates in version one.
+  updates in version one. There is also no Wi-Fi-only download switch:
+  APKs are only fetched when the user explicitly Installs, Updates, or
+  runs Update All, so they already control when cellular data is used.
 - Check for updates now
 - Catalog last-updated timestamp
 - About: app version, open-source licenses, source repository link,
@@ -209,10 +211,12 @@ against:
 - **Category**: exactly one.
 - **Popularity rank**: computed server-side from download counts and
   published as an explicit order. The client never sorts.
-- **Capability requirements**: a tagged list, for example
-  requires-camera or requires-two-screens, matched against device
-  capabilities the client detects. Drives greyed tiles and the met or
-  unmet list on Detail.
+- **Capability requirements**: a closed, client-detectable tag list.
+  Only tags the client can evaluate are allowed; the pipeline rejects
+  unknown ones. Version one starts with an empty vocabulary and adds a
+  tag when a catalog entry cannot usefully run without that hardware.
+  Optional enhancements are written as notes, not tags. Drives greyed
+  tiles and the met or unmet list on Detail.
 - **Localizable text**, with English as the fallback: name, summary,
   full description, compatibility notes, changelog. The schema carries
   a language key per text field even if version one ships English
@@ -245,10 +249,5 @@ comparison, device capability detection, the download queue,
 PackageInstaller sessions and the confirmation chain, notification
 scheduling, and the catalog and artwork cache.
 
-## Open items
-
-- The capability tag vocabulary and how the client detects each one.
-- Whether a Wi-Fi-only download switch is needed. It is not in Settings
-  for version one.
-- The catalog signing and verification scheme, which belongs to the
-  infrastructure plan rather than to this document.
+Catalog signing and verification is not a screen question. It belongs
+to the infrastructure plan.
