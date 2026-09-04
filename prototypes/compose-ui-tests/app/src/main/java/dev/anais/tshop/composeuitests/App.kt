@@ -22,7 +22,10 @@ sealed interface Screen {
 }
 
 @Composable
-fun App(inputEvents: Flow<InputEvent> = emptyFlow()) {
+fun App(
+    inputEvents: Flow<InputEvent> = emptyFlow(),
+    onOpenUnknownApps: () -> Unit = {},
+) {
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     MaterialTheme(colorScheme = protoColors()) {
         when (screen) {
@@ -32,6 +35,7 @@ fun App(inputEvents: Flow<InputEvent> = emptyFlow()) {
                 ControllerScreen(
                     events = inputEvents,
                     onBack = { screen = Screen.Home },
+                    onOpenUnknownApps = onOpenUnknownApps,
                 )
             Screen.FocusKitchen ->
                 FocusKitchenScreen(onBack = { screen = Screen.Home })
