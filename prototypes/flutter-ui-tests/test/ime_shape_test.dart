@@ -65,6 +65,7 @@ void main() {
   testWidgets('home opens both prototype pages', (tester) async {
     await tester.pumpWidget(const ProtoApp());
     expect(find.text('Controller input'), findsOneWidget);
+    expect(find.text('Widget focus'), findsOneWidget);
     expect(find.text('IME shape'), findsOneWidget);
 
     await tester.tap(find.text('IME shape'));
@@ -77,5 +78,13 @@ void main() {
     await tester.tap(find.text('Controller input'));
     await tester.pumpAndSettle();
     expect(find.text('#2 Controller input'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Widget focus'));
+    await tester.pumpAndSettle();
+    expect(find.text('Focus kitchen'), findsOneWidget);
+    expect(find.text('Stock'), findsOneWidget);
   });
 }

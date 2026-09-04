@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'controller_page.dart';
+import 'focus_page.dart';
 import 'ime_page.dart';
 
 void main() {
@@ -42,6 +43,17 @@ class HomePage extends StatelessWidget {
             onOpen: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const ControllerPage()),
             ),
+          ),
+          const SizedBox(height: 12),
+          ProtoCard(
+            number: 'Focus',
+            title: 'Widget focus',
+            body:
+                'D-pad through stock Material controls. Compare Flutter\'s '
+                'geometric arrows vs linear next/previous.',
+            onOpen: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute<void>(builder: (_) => const FocusPage())),
           ),
           const SizedBox(height: 12),
           ProtoCard(
