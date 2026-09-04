@@ -1,6 +1,6 @@
 # Handheld input prototypes (Compose)
 
-Throwaway Material3 harness matching [prototypes/flutter-ui-tests](../flutter-ui-tests) for [specs/98-prototype-this-first.md](../../specs/98-prototype-this-first.md) items **#2** (controller input) and **#12** (IME shape), plus a stock-widget focus kitchen. Phone Compose only — no `androidx.tv`. Nothing here ships.
+Throwaway Material3 harness matching [prototypes/flutter-ui-tests](../flutter-ui-tests) for [specs/98-prototype-this-first.md](../../specs/98-prototype-this-first.md) items **#2** (controller input) and **#12** (IME shape), plus stock and Compose TV focus kitchens. Nothing here ships.
 
 ## Run
 
@@ -38,6 +38,12 @@ Record per device:
 - Does the slider steal Left/Right?
 - Can you enter and leave the expansion and the dialog? Does focus return?
 - Is this already better than Flutter, or still worse than Compose TV?
+
+## Focus kitchen — Compose TV
+
+Same walk, `androidx.tv.material3` buttons/cards/list items. TextField, Slider, and Dialog stay phone Material3 (TV has none).
+
+Record: glow/scale on focus, whether the 2×3 grid is geometric, whether TV ListItem is easier than phone Switch/Checkbox.
 
 ## #12 IME shape
 

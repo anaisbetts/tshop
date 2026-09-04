@@ -18,6 +18,8 @@ sealed interface Screen {
 
     data object FocusKitchen : Screen
 
+    data object FocusTvKitchen : Screen
+
     data object Ime : Screen
 }
 
@@ -39,6 +41,8 @@ fun App(
                 )
             Screen.FocusKitchen ->
                 FocusKitchenScreen(onBack = { screen = Screen.Home })
+            Screen.FocusTvKitchen ->
+                FocusTvKitchenScreen(onBack = { screen = Screen.Home })
             Screen.Ime ->
                 ImeScreen(onBack = { screen = Screen.Home })
         }

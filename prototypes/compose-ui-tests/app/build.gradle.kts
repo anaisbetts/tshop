@@ -50,5 +50,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
+    implementation("androidx.tv:tv-material:1.1.0")
     testImplementation("junit:junit:4.13.2")
 }

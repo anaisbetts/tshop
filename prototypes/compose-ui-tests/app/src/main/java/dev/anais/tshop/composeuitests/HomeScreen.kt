@@ -53,6 +53,16 @@ fun HomeScreen(onOpen: (Screen) -> Unit) {
             }
             item {
                 ProtoCard(
+                    number = "TV",
+                    title = "Focus kitchen — Compose TV",
+                    body =
+                        "Same controls, androidx.tv.material3 widgets. " +
+                            "Glow, scale, and 2D focus — the thing Flutter is being compared to.",
+                    onOpen = { onOpen(Screen.FocusTvKitchen) },
+                )
+            }
+            item {
+                ProtoCard(
                     number = "#12",
                     title = "IME shape",
                     body =
