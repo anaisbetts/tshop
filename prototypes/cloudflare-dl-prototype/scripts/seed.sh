@@ -18,6 +18,9 @@ put=(npx wrangler r2 object put)
 if [[ "$remote" -eq 0 ]]; then
   migrate+=(--local)
   put+=(--local)
+else
+  migrate+=(--remote)
+  put+=(--remote)
 fi
 CI=1 "${migrate[@]}"
 

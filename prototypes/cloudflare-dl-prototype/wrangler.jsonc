@@ -17,13 +17,8 @@
     {
       "binding": "DB",
       "database_name": "tshop-counts-proto",
+      "database_id": "2ae32fb2-b954-4e1a-ab34-f9932813f1fb",
       "migrations_dir": "./migrations"
     }
   ],
-  "analytics_engine_datasets": [
-    {
-      "binding": "AE",
-      "dataset": "tshop_completions_proto"
-    }
-  ]
 }

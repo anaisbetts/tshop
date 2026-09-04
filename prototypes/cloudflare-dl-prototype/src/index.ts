@@ -86,11 +86,6 @@ async function record(env: Env, key: string): Promise<void> {
   )
     .bind(key, day)
     .run();
-  env.AE.writeDataPoint({
-    blobs: [key],
-    doubles: [1],
-    indexes: [day],
-  });
 }
 
 async function counts(env: Env): Promise<Response> {
