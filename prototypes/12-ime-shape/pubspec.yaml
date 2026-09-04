@@ -1,5 +1,5 @@
 name: ime_shape
-description: "IME shape harness for spec prototype #12 (Retroid and Odin)."
+description: "Handheld input harness for spec prototypes #2 and #12."
 publish_to: 'none'
 version: 0.1.0+1
 
