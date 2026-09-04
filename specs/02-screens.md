@@ -173,10 +173,18 @@ Selecting any tile opens App Detail.
   updates in version one. There is also no Wi-Fi-only download switch:
   APKs are only fetched when the user explicitly Installs, Updates, or
   runs Update All, so they already control when cellular data is used.
+- **Privacy Mode**, off by default. Label: "Do not send any anonymized
+  information to the shop." When on, Install, Update, and Update All
+  use each variant's upstream URL instead of tShop's counted download
+  URL. Catalog and artwork fetches are unchanged. If upstream is
+  unreachable, the queue item fails; it must not fall back to the
+  counted host.
 - Check for updates now
 - Catalog last-updated timestamp
 - About: app version, open-source licenses, source repository link,
-  support link
+  support link, the "What tShop knows about you" policy from the PRD,
+  and a link that opens the public stats dashboard in the external
+  browser
 
 ### Surfaces that are not screens
 
@@ -185,6 +193,10 @@ Selecting any tile opens App Detail.
   background check does not pre-download APKs; downloads begin when the
   user acts.
 - **Wi-Fi status icon**, described above.
+- **Public stats dashboard.** A first-party web page, not an in-app
+  screen. It lists per-app download totals (all-time and recent) from
+  the same daily aggregates that produce popularity rank. It also
+  quotes the privacy policy. No login. No extra fields for operators.
 
 ## What the screens require from the server
 
@@ -196,9 +208,11 @@ locally. No screen needs a per-request API.
 
 This resolves the delivery question left open during planning: the
 server side is a publishing pipeline that emits a signed catalog
-document and static assets, plus a download host. The download host is
-the only live component, and it exists so that tShop can count
-downloads.
+document, static assets, and a public stats page, plus a download
+host. The download host is the only live request path. It exists so
+tShop can count completed APK downloads. Those counts are the
+analytics system described in the PRD. They are not an undecided
+side effect.
 
 ### Catalog entry fields
 
@@ -223,9 +237,11 @@ against:
   only.
 - **Latest approved release only**: version name and code, release
   date, changelog, and a list of **APK variants**. Each variant has
-  supported ABIs, minimum SDK, size, hash, download URL, and an
-  optional human-readable label. A flag on the release marks whether
-  the variants represent a user choice worth a dialog.
+  supported ABIs, minimum SDK, size, hash, tShop download URL,
+  upstream download URL, and an optional human-readable label. The
+  client uses the tShop URL unless Privacy Mode is on. A flag on the
+  release marks whether the variants represent a user choice worth a
+  dialog.
 - **Assets**: square tile, larger icon or artwork, and screenshots as
   thumbnail plus full-size pairs.
 - **Upstream project URL.**
@@ -234,11 +250,17 @@ against:
 
 - Release monitoring and validation, as described in the PRD, produces
   the signed catalog document.
-- APK downloads are **rehosted or proxied** through tShop so downloads
-  can be counted. Popularity is recomputed from those counts and baked
-  into the next published catalog order.
-- Tiles, artwork, and screenshot pairs are hosted with cache-friendly
-  headers so the client can keep Browse working offline.
+- APK downloads are **rehosted or proxied** through tShop so completed
+  downloads can be counted, unless Privacy Mode is on. The host
+  increments a daily total for package, version, and variant, then
+  forgets the request. Popularity is recomputed from those totals and
+  baked into the next published catalog order. The same totals are
+  published on the public stats page. Privacy Mode downloads never
+  hit this host.
+- Catalog documents, tiles, artwork, and screenshot pairs are ordinary
+  static files. Fetching them is not an analytics event.
+- Static assets use cache-friendly headers so the client can keep
+  Browse working offline.
 - The catalog carries a published timestamp, shown in Settings.
 
 ### Client-only concerns
