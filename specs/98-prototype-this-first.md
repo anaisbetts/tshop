@@ -243,7 +243,7 @@ Worker CPU column, which is the difference between $5 and a CPU-limit
 error on RetroArch.
 
 **Result.** 2026-09-04, local workerd only. Harness in
-`prototypes/04-worker-completion-counter`. A 200 MB object: full GET
+`prototypes/cloudflare-dl-prototype`. A 200 MB object: full GET
 counts once; abort after headers and abort at 97% (194/200 MB then
 cancel) count zero; a single `Range` is 206 and uncounted; multi-range
 is 400; D1 is exact on a 20-wide 1 MB burst. 1 MB on loopback finishes
