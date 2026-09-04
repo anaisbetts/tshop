@@ -242,6 +242,16 @@ add; whether the client must be told never to parallelise downloads; the
 Worker CPU column, which is the difference between $5 and a CPU-limit
 error on RetroArch.
 
+**Result.** 2026-09-04, local workerd only. Harness in
+`prototypes/04-worker-completion-counter`. A 200 MB object: full GET
+counts once; abort after headers and abort at 97% (194/200 MB then
+cancel) count zero; a single `Range` is 206 and uncounted; multi-range
+is 400; D1 is exact on a 20-wide 1 MB burst. 1 MB on loopback finishes
+before the client can disconnect, so abort has to be the 200 MB object.
+CPU-ms, Cache Everything, Dio / `DownloadManager` `Range` behaviour,
+and EU / US / APAC latency still need a Cloudflare account and a
+handheld.
+
 ## Tier 2 — the build is wrong if this fails
 
 ### 5. Sectioned focus grid

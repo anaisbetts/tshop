@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tshop-completion-counter",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-04",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "tshop-apk-proto"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tshop-counts-proto",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "AE",
+      "dataset": "tshop_completions_proto"
+    }
+  ]
+}
