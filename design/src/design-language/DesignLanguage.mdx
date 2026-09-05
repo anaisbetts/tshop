@@ -1,0 +1,88 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks'
+
+import * as AppShelfStories from './AppShelf.stories'
+import * as AppTileStories from './AppTile.stories'
+import * as CategoryFrameStories from './CategoryFrame.stories'
+import * as ControlsStories from './Controls.stories'
+import * as GlyphStories from './Glyph.stories'
+import * as TypographyStories from './Typography.stories'
+import * as TopBarStories from './TopBar.stories'
+import * as ButtonLegendStories from './ButtonLegend.stories'
+
+<Meta title="Design Language/Overview" />
+
+# tShop design language
+
+A 3DS / iiSU-flavoured study for the handheld storefront. Not a catalog, not an
+installer. Names, versions, and progress are fake. Artwork credits live in
+[SOURCES.md](/design-language/SOURCES.md).
+
+The visual reference is a light, dotted home menu: white rounded panels, a
+lavender focus ring, a centre title pill, shoulder glyphs, and corner button
+legends. Mixed-size tiles from the inspiration shot are replaced with the
+square, category-framed grid in `specs/02-screens.md`.
+
+## Thor canvas
+
+The AYN Thor AVD (`hw.lcd.width=1920`, `hw.lcd.height=1080`,
+`hw.lcd.density=367`) is **837 × 471 logical pixels**. 367 ÷ 160 = 2.29375, so
+`1920 / 2.29375 ≈ 837` and `1080 / 2.29375 ≈ 471`. Stories render 1 CSS pixel =
+1 dp. A 1px hairline is about 2 physical pixels on the top AMOLED.
+
+The bottom 1240 × 1080 panel is not modelled here. The checked-in AVD leaves
+`hw.display1..3` at zero.
+
+Every specimen below is clipped to that 837 × 471 frame.
+
+## Palette and type
+
+Nunito Variable, self-hosted. 800 for the title pill and category labels, 700
+for legends and buttons, 500 for body. Radii: tile 14, panel 24, pill full.
+
+<Canvas of={TypographyStories.Colors} />
+
+<Canvas of={TypographyStories.Specimens} />
+
+## Glyphs and Wi-Fi
+
+Bitmapped Wi-Fi in a corner, as the screens spec asks. Click the icon on the
+shelf to flip online / offline. `L` / `R` or `[` / `]` switch Browse, Library,
+and Settings.
+
+<Canvas of={GlyphStories.Set} />
+
+## Tiles
+
+96 dp squares. Name lives in the top pill, not on the tile. States: default,
+installed check, update arrow, greyed (capability miss), downloading arc,
+focused lavender ring at `scale(1.04)`.
+
+<Canvas of={AppTileStories.States} />
+
+## Category frame
+
+Three rows, column-major, width grows with the entry count. One frame per
+category on Browse; Library uses the same chrome with state frames.
+
+<Canvas of={CategoryFrameStories.Emulators} />
+
+## App shelf
+
+Arrow keys move a hand-rolled neighbour graph with row memory across frame
+boundaries. Enter opens (title pill shows version). Escape clears focus.
+Pointer hover and click also move focus. Horizontal snap-scroll follows the
+focused tile.
+
+<Canvas of={AppShelfStories.Default} />
+
+## Chrome
+
+<Canvas of={TopBarStories.Browse} />
+
+<Canvas of={ButtonLegendStories.Default} />
+
+## Buttons and Privacy Mode
+
+One primary action at a time, plus the Settings toggle with the spec label.
+
+<Canvas of={ControlsStories.Actions} />

@@ -1,0 +1,66 @@
+:root {
+  --tshop-bg: #e9eaee;
+  --tshop-dot: #c5c7cf;
+  --tshop-panel: #ffffff;
+  --tshop-ink: #2b2b33;
+  --tshop-muted: #6b6d78;
+  --tshop-faint: #9a9ba6;
+  --tshop-line: #d5d7de;
+  --tshop-focus: #a58cff;
+  --tshop-focus-soft: rgba(165, 140, 255, 0.38);
+  --tshop-update: #3cbf7a;
+  --tshop-danger: #e24b4b;
+  --tshop-warn: #e0b400;
+  --tshop-glyph-a: #e24b4b;
+  --tshop-glyph-b: #e0b400;
+  --tshop-glyph-x: #4a7fe8;
+  --tshop-glyph-y: #3cbf7a;
+  --tshop-glyph-lr: #4a4c56;
+
+  --tshop-radius-tile: 14px;
+  --tshop-radius-panel: 24px;
+  --tshop-radius-pill: 999px;
+
+  --tshop-space-1: 4px;
+  --tshop-space-2: 8px;
+  --tshop-space-3: 12px;
+  --tshop-space-4: 16px;
+  --tshop-space-5: 20px;
+
+  --tshop-title: 18px;
+  --tshop-section: 14px;
+  --tshop-body: 13px;
+  --tshop-legend: 12px;
+  --tshop-badge: 10px;
+
+  --tshop-font: 'Nunito Variable', Nunito, sans-serif;
+  --tshop-weight-body: 500;
+  --tshop-weight-ui: 700;
+  --tshop-weight-display: 800;
+
+  --tshop-shadow-panel: 0 10px 24px rgba(43, 43, 51, 0.08), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  --tshop-shadow-focus: 0 0 0 3px #fff, 0 0 0 6px var(--tshop-focus), 0 8px 18px var(--tshop-focus-soft);
+
+  --tshop-tile: 96px;
+  --tshop-width: 837px;
+  --tshop-height: 471px;
+}
+
+html,
+body,
+#storybook-root {
+  font-family: var(--tshop-font);
+  font-weight: var(--tshop-weight-body);
+  color: var(--tshop-ink);
+  background: var(--tshop-bg);
+}
+
+body {
+  margin: 0;
+}
+
+.tshop-dots {
+  background-color: var(--tshop-bg);
+  background-image: radial-gradient(var(--tshop-dot) 1px, transparent 1.2px);
+  background-size: 8px 8px;
+}
