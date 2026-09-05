@@ -333,7 +333,7 @@ export function DesignLanguageShowcase({
           font-size: 32px;
           font-weight: 800;
           letter-spacing: -0.8px;
-          background: linear-gradient(135deg, #ffffff, var(--ts-text-secondary));
+          background: linear-gradient(135deg, var(--ts-text-primary), var(--ts-text-secondary));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -448,7 +448,7 @@ export function DesignLanguageShowcase({
         .ts-demo-preview-frame {
           border-radius: 16px;
           border: 1px solid var(--ts-border-subtle);
-          background: rgba(0, 0, 0, 0.3);
+          background: var(--ts-bg-surface);
           padding: 20px;
           box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
         }
@@ -563,7 +563,7 @@ export function DesignLanguageShowcase({
 
         .ts-split-left {
           height: 520px;
-          background: rgba(12, 13, 20, 0.7);
+          background: var(--ts-bg-canvas);
           border-radius: 16px;
           border: 1px solid var(--ts-border-subtle);
           overflow: hidden;

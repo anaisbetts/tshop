@@ -43,7 +43,7 @@ export interface ControllerHintsProps {
 // 4. The most important class / function in the file - the theme of what this file is about
 export function ControllerHints({
   prompts,
-  theme = 'dark',
+  theme,
   layout = 'nintendo',
 }: ControllerHintsProps) {
   return (
@@ -72,7 +72,7 @@ export function ControllerHints({
           display: flex;
           align-items: center;
           padding: 8px 16px;
-          background: rgba(12, 13, 20, 0.85);
+          background: var(--ts-bg-surface);
           backdrop-filter: blur(8px);
           border-top: 1px solid var(--ts-border-subtle);
           font-family: var(--ts-font-display);

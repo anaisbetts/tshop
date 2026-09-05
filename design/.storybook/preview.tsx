@@ -1,7 +1,23 @@
-import type { Preview } from '@storybook/react-vite'
+import type { Decorator, Preview } from '@storybook/react-vite'
+import '../src/design-language/tshop-theme.css'
+
+const TSHOP_BACKGROUNDS = {
+  dark: { name: 'dark', value: '#0c0d14' },
+  light: { name: 'light', value: '#f1f5f9' },
+} as const
+
+type TshopTheme = 'dark' | 'light'
 
 const preview: Preview = {
+  decorators: [withTshopTheme],
+  initialGlobals: {
+    backgrounds: { value: 'dark' },
+  },
   parameters: {
+    backgrounds: {
+      options: TSHOP_BACKGROUNDS,
+    },
+
     controls: {
       matchers: {
        color: /(background|color)$/i,
@@ -64,3 +80,25 @@ const preview: Preview = {
 };
 
 export default preview;
+
+function withTshopTheme(Story: Parameters<Decorator>[0], context: Parameters<Decorator>[1]) {
+  const theme = tshopThemeFromBackgrounds(context.globals.backgrounds)
+
+  return (
+    <div className="tshop-theme" data-theme={theme}>
+      <Story />
+    </div>
+  )
+}
+
+function tshopThemeFromBackgrounds(backgrounds: unknown): TshopTheme {
+  if (typeof backgrounds === 'string') {
+    return backgrounds === 'light' ? 'light' : 'dark'
+  }
+
+  if (backgrounds && typeof backgrounds === 'object' && 'value' in backgrounds) {
+    return (backgrounds as { value?: string }).value === 'light' ? 'light' : 'dark'
+  }
+
+  return 'dark'
+}

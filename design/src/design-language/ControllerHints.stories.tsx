@@ -34,7 +34,6 @@ type Story = StoryObj<typeof meta>;
 export const DefaultBrowseHints: Story = {
   args: {
     prompts: DEFAULT_CONSOLE_PROMPTS,
-    theme: 'dark',
     layout: 'nintendo',
   },
 };
@@ -48,7 +47,6 @@ export const DetailScreenHints: Story = {
       { button: 'x', label: 'Screenshots' },
       { button: 'y', label: 'Open Upstream URL' },
     ],
-    theme: 'dark',
     layout: 'nintendo',
   },
 };

@@ -1,7 +1,8 @@
 /* tShop Design Tokens & iiSU / 3DS Inspired Styling */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
 
-:root {
+:root,
+[data-theme='dark'] {
   /* Color Palette - iiSU gradient / frosted 3DS aesthetic */
   --ts-bg-canvas: #0c0d14;
   --ts-bg-surface: rgba(24, 26, 38, 0.75);

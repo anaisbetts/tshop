@@ -267,8 +267,8 @@ export function AynThorDualScreen({
           width: 837px;
           height: 471px;
           border-radius: 12px;
-          background: #0c0d14;
-          border: 2px solid #282c3f;
+          background: var(--ts-bg-canvas);
+          border: 2px solid var(--ts-border-subtle);
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -328,8 +328,8 @@ export function AynThorDualScreen({
           width: 592px;
           height: 516px;
           border-radius: 12px;
-          background: #0c0d14;
-          border: 2px solid #282c3f;
+          background: var(--ts-bg-canvas);
+          border: 2px solid var(--ts-border-subtle);
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -342,7 +342,7 @@ export function AynThorDualScreen({
           align-items: center;
           justify-content: space-between;
           padding: 10px 16px;
-          background: rgba(18, 20, 30, 0.85);
+          background: var(--ts-bg-surface);
           border-bottom: 1px solid var(--ts-border-subtle);
           font-size: 13px;
         }
