@@ -1,0 +1,82 @@
+/* tShop Design Tokens & iiSU / 3DS Inspired Styling */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root,
+[data-theme='dark'] {
+  /* Color Palette - iiSU gradient / frosted 3DS aesthetic */
+  --ts-bg-canvas: #0c0d14;
+  --ts-bg-surface: rgba(24, 26, 38, 0.75);
+  --ts-bg-surface-elevated: rgba(36, 40, 58, 0.85);
+  --ts-bg-surface-frosted: rgba(255, 255, 255, 0.06);
+
+  --ts-accent-cyan: #00f0ff;
+  --ts-accent-purple: #9d4edd;
+  --ts-accent-magenta: #f72585;
+  --ts-accent-green: #10b981;
+  --ts-accent-amber: #f59e0b;
+  --ts-accent-red: #ef4444;
+
+  --ts-border-subtle: rgba(255, 255, 255, 0.12);
+  --ts-border-active: rgba(255, 255, 255, 0.4);
+  --ts-border-focus: #00f0ff;
+
+  --ts-glow-focus: 0 0 0 3px rgba(0, 240, 255, 0.4), 0 0 16px rgba(0, 240, 255, 0.3);
+  --ts-glow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+  --ts-text-primary: #f8fafc;
+  --ts-text-secondary: #94a3b8;
+  --ts-text-muted: #64748b;
+
+  /* Typography */
+  --ts-font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --ts-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Viewport tokens (Ayn Thor) */
+  --ayn-thor-top-w: 837px;
+  --ayn-thor-top-h: 471px;
+  --ayn-thor-bottom-w: 592px;
+  --ayn-thor-bottom-h: 516px;
+}
+
+/* Light theme support */
+[data-theme='light'] {
+  --ts-bg-canvas: #f1f5f9;
+  --ts-bg-surface: rgba(255, 255, 255, 0.85);
+  --ts-bg-surface-elevated: #ffffff;
+  --ts-bg-surface-frosted: rgba(255, 255, 255, 0.7);
+
+  --ts-border-subtle: rgba(0, 0, 0, 0.08);
+  --ts-border-active: rgba(0, 0, 0, 0.2);
+  --ts-border-focus: #0284c7;
+
+  --ts-glow-focus: 0 0 0 3px rgba(2, 132, 199, 0.35), 0 0 12px rgba(2, 132, 199, 0.25);
+  --ts-glow-card: 0 4px 20px 0 rgba(0, 0, 0, 0.06);
+
+  --ts-text-primary: #0f172a;
+  --ts-text-secondary: #475569;
+  --ts-text-muted: #94a3b8;
+}
+
+/* Base resets & utilities inside tshop scope */
+.tshop-theme {
+  font-family: var(--ts-font-display);
+  color: var(--ts-text-primary);
+  background-color: var(--ts-bg-canvas);
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tshop-theme *,
+.tshop-theme *::before,
+.tshop-theme *::after {
+  box-sizing: border-box;
+}
+
+/* Frosted glass utility */
+.ts-glass-panel {
+  background: var(--ts-bg-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--ts-border-subtle);
+  border-radius: 12px;
+}
