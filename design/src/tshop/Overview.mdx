@@ -1,0 +1,46 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+
+<Meta title="tShop Theme/Overview" />
+
+# tShop theme v2
+
+A look study for the storefront. The screens follow `specs/02-screens.md`
+and don't add product scope. Names, versions and states are fake. Credits
+are in `src/tshop/art/SOURCES.md`.
+
+## What the look is
+
+- **Square tiles that read as a set.** Every icon sits on its own backdrop
+  colour with a shared 18 dp radius, a glossy top sheen and the same shadow.
+  The catalog pipeline would bake this into the tile PNG. Here it is a
+  `backdrop` and a `scale` per entry in `catalog.ts`.
+- **One accent.** tShop orange (`#ff7a1a`, a nod to the 3DS eShop) is used
+  for the brand mark, focus, primary actions and update badges. Everything
+  else is ink on a cool, pinstriped wallpaper.
+- **Focus is a breathing ring:** a 3 dp gap, a 3 dp orange ring and a lift,
+  in both modes.
+- **Info strip instead of tile labels.** The focused app's name, summary and
+  state sit above the grid, the way the 3DS top screen named the selected
+  icon. Tiles stay unlabeled, so the grid stays dense.
+- **Framed shelves.** Each category is a frosted panel with its label and a
+  count. Frames are column-major and scroll sideways. Library uses the same
+  frames for states, and its Update All is a square action tile you reach
+  with the d-pad like any other.
+- **Detail spends space on art.** The feature graphic bleeds behind the top
+  bar, followed by the large tile, one primary action with a one-line
+  explainer, a screenshot strip, and About / New in / Details cards.
+- **Day and Night** are the same tokens with different values (`tokens.css`).
+- Type is **M PLUS Rounded 1c**: 900 for Detail titles, 800 for names and
+  frames, 700 for UI, 500 for body.
+
+## Canvases
+
+`thor` is 837 × 471 dp (the Thor's top panel). `square` is 592 × 516 dp and
+only answers "does this hold up near 1:1?". The layout is the same on both;
+square gets 4 tile rows at 70 dp instead of 3 at 80 dp. Neither is a
+dual-screen layout.
+
+## Keyboard
+
+In **Walkthrough**: arrows move, Enter opens / toggles, Escape goes back,
+`[` / `]` are L / R, `y` commits a sample search, and `x` clears it.

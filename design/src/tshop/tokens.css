@@ -1,0 +1,78 @@
+/*
+ * tShop theme v2 tokens. One layout, two modes. Every component reads these,
+ * never raw colours, so Day and Night stay the same design.
+ */
+
+.ts-root,
+.ts-root[data-mode='day'] {
+  --ts-wall-top: #f3f5f9;
+  --ts-wall-bottom: #dfe4ec;
+  --ts-wall-stripe: rgba(40, 52, 80, 0.035);
+  --ts-shelf: rgba(255, 255, 255, 0.62);
+  --ts-shelf-edge: rgba(255, 255, 255, 0.9);
+  --ts-shelf-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 8px 22px rgba(40, 52, 80, 0.1);
+  --ts-card: #ffffff;
+  --ts-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 6px 18px rgba(40, 52, 80, 0.1);
+  --ts-chip: rgba(40, 52, 80, 0.07);
+  --ts-ink: #1d2230;
+  --ts-ink-2: #5a6274;
+  --ts-ink-3: #8c93a3;
+  --ts-hairline: rgba(40, 52, 80, 0.1);
+  --ts-tab-active: #ffffff;
+  --ts-scrim: linear-gradient(180deg, rgba(236, 240, 245, 0) 30%, rgba(236, 240, 245, 0.78) 68%, #eceff4 96%);
+  --ts-focus-gap: #ffffff;
+}
+
+.ts-root[data-mode='night'] {
+  --ts-wall-top: #1a1d26;
+  --ts-wall-bottom: #10121a;
+  --ts-wall-stripe: rgba(255, 255, 255, 0.025);
+  --ts-shelf: rgba(255, 255, 255, 0.05);
+  --ts-shelf-edge: rgba(255, 255, 255, 0.08);
+  --ts-shelf-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 26px rgba(0, 0, 0, 0.35);
+  --ts-card: #232733;
+  --ts-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 8px 22px rgba(0, 0, 0, 0.35);
+  --ts-chip: rgba(255, 255, 255, 0.08);
+  --ts-ink: #f2f4f8;
+  --ts-ink-2: #aab1c0;
+  --ts-ink-3: #727a8c;
+  --ts-hairline: rgba(255, 255, 255, 0.08);
+  --ts-tab-active: rgba(255, 255, 255, 0.14);
+  --ts-scrim: linear-gradient(180deg, rgba(24, 27, 36, 0) 30%, rgba(24, 27, 36, 0.8) 68%, #181b24 96%);
+  --ts-focus-gap: #10121a;
+}
+
+.ts-root {
+  /* tShop orange: a nod to the 3DS eShop. Brand, focus, primary action. */
+  --ts-accent: #ff7a1a;
+  --ts-accent-ink: #ffffff;
+  --ts-accent-soft: rgba(255, 122, 26, 0.32);
+  --ts-good: #22b573;
+  --ts-bad: #ec4d4d;
+  --ts-pad-a: #ec4d4d;
+  --ts-pad-b: #f2b705;
+  --ts-pad-x: #3d7cf2;
+  --ts-pad-y: #22b573;
+  --ts-pad-neutral: #3a4152;
+
+  --ts-font: 'M PLUS Rounded 1c', 'Nunito', system-ui, sans-serif;
+  --ts-w-body: 500;
+  --ts-w-ui: 700;
+  --ts-w-display: 800;
+
+  --ts-size-hero: 22px;
+  --ts-size-title: 17px;
+  --ts-size-body: 12.5px;
+  --ts-size-ui: 12px;
+  --ts-size-small: 10.5px;
+
+  --ts-r-tile: 18px;
+  --ts-r-shelf: 22px;
+  --ts-r-card: 16px;
+  --ts-r-pill: 999px;
+
+  --ts-tile: 80px;
+  --ts-gap: 8px;
+
+  --ts-focus-ring: 0 0 0 3px var(--ts-focus-gap), 0 0 0 6px var(--ts-accent), 0 10px 24px var(--ts-accent-soft);
+}
