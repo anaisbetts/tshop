@@ -5,6 +5,9 @@
     },
     "pstack": {
       "enabled": true
+    },
+    "cloudflare": {
+      "enabled": true
     }
   }
 }

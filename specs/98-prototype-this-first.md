@@ -242,6 +242,18 @@ add; whether the client must be told never to parallelise downloads; the
 Worker CPU column, which is the difference between $5 and a CPU-limit
 error on RetroArch.
 
+**Result.** 2026-09-04. Harness in `prototypes/cloudflare-dl-prototype`,
+live at `tshop-completion-counter.anais.workers.dev`. The CPU column
+in 03 is real: four 200 MB full GETs from TXL (~4–6 s wall, 35–49
+MB/s) plus HEADs and `/counts` were 9 invocations, **899 µs total
+CPU**, P50 0.9 ms / P99 2.2 ms, memory flat at 1.84 MB, 0 CPU-limit
+errors. Streaming does not bill like a `transform()`. Option A stands.
+D1 recorded 3 of 4 live completions (one Cancelled invocation); local
+workerd was exact on abort-at-97%, single `Range` 206 uncounted,
+multi-range 400, and a 20-wide 1 MB burst. Leftover, not load-bearing
+for the bill: Cache Everything, Dio / `DownloadManager` `Range`,
+EU / US / APAC vs Hetzner.
+
 ## Tier 2 — the build is wrong if this fails
 
 ### 5. Sectioned focus grid

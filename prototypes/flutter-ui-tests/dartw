@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+
+if ! command -v fvm >/dev/null 2>&1; then
+  echo "fvm is not installed. Install it from https://fvm.app" >&2
+  exit 1
+fi
+
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec fvm dart "$@"
