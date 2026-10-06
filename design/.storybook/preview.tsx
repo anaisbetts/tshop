@@ -1,4 +1,10 @@
 import type { Preview } from '@storybook/react-vite'
+import '@fontsource/m-plus-rounded-1c/500.css'
+import '@fontsource/m-plus-rounded-1c/700.css'
+import '@fontsource/m-plus-rounded-1c/800.css'
+import '@fontsource/m-plus-rounded-1c/900.css'
+import '../src/tshop/tokens.css'
+import '../src/tshop/theme.css'
 
 const preview: Preview = {
   parameters: {
