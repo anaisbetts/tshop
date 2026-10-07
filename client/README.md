@@ -1,17 +1,18 @@
-# tshop
+# tShop client
 
-A new Flutter project.
+Flutter app for Android handhelds. There is always a **web** target whose
+job is to demo the app in a browser. It does not install anything; device
+services are stubbed on web.
 
-## Getting Started
+## Toolchain
 
-This project is a starting point for a Flutter application.
+From `client/`, use the FVM wrappers (pin is `.fvmrc`, currently 3.47.2):
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+./flutterw run -d chrome   # web demo
+./flutterw run             # Android
+./tool/verify              # format, analyze, test, build web
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Never a global `flutter`. Debug Android id is `dev.anais.tshop.dev`;
+release is `dev.anais.tshop`.

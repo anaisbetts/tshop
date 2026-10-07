@@ -7,7 +7,10 @@ This document lists the screens of tShop version one and the actions
 available on each. It is not a visual design. Its purpose is to make
 the client concrete enough that the catalog and server requirements
 fall out of it rather than being guessed at. It follows
-[01-prd.md](01-prd.md) and assumes its scope and exclusions.
+[01-prd.md](01-prd.md) and assumes its scope and exclusions. The
+screens are the Android product. The Flutter **web** target is a demo
+of these screens and must not install anything; see
+[Web demo](#web-demo).
 
 ## Top-level structure
 
@@ -273,3 +276,12 @@ scheduling, and the catalog and artwork cache.
 
 Catalog signing and verification is not a screen question. It belongs
 to the infrastructure plan.
+
+## Web demo
+
+These screens describe the Android client. The Flutter web target is a
+demo of the same screens, not a second product. Device-only actions
+listed under Onboarding, Install, Update, Open, Uninstall, Update All,
+the Library confirmation chain, and update notifications are stubbed
+and must not reach a package manager or notification scheduler. Do not
+add web-only screens.
