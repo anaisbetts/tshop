@@ -321,6 +321,24 @@ them current.
 Completing this flow should not require Obtainium, a web browser, or
 knowledge of GitHub release conventions.
 
+### Web demo
+
+The Flutter client always has a **web** target. Its job is to demo the
+app in a browser so the storefront can be reviewed without a handheld.
+It is not a product surface. tShop does not sell or install software
+on the web.
+
+On web, every app service that would touch a device is stubbed. The
+demo must not install, update, uninstall, or open Android packages;
+must not scan installed packages or signing certificates; must not
+open Android Settings for unknown-sources or notifications; must not
+schedule update notifications; and must not hand an APK to a package
+installer. Catalog and artwork fetches may still run so the screens
+can be shown. Install, Update, Open, Uninstall, and Update All are
+inert.
+
+The product target remains an Android handheld.
+
 ## Installs and updates
 
 Version one uses Android's normal package installer. Android may still
@@ -360,6 +378,8 @@ Version one includes:
   project uses
 - Privacy Mode, which fetches APKs from the publisher instead of the
   counted host
+- A web demo of the Flutter client whose device services are stubbed
+  and cannot install software
 
 ### Success criteria
 
