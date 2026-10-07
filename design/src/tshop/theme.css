@@ -1510,6 +1510,11 @@
   display: none;
 }
 
+.ts-root--square .ts-about__rows .ts-row {
+  min-height: 38px;
+  padding-block: 4px;
+}
+
 /* ---------- public stats page (web, not in-app) ---------- */
 
 .ts-root.ts-web {
