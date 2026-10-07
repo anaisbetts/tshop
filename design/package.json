@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "storybook dev -p 6006",
+    "build": "npm run build-storybook",
     "lint": "oxlint",
-    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project=storybook",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "tsc --noEmit && storybook build"
   },
   "dependencies": {
     "@fontsource/m-plus-rounded-1c": "^5.3.0",
