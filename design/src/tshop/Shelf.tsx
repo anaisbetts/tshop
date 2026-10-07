@@ -66,7 +66,7 @@ function EmptyFrame({ children }: { children: ReactNode }) {
   return (
     <section className="ts-frame ts-frame--empty">
       <div className="ts-frame__grid" aria-hidden="true">
-        {Array.from({ length: 12 }, (_, n) => (
+        {Array.from({ length: 40 }, (_, n) => (
           <span className="ts-ghost" key={n} />
         ))}
       </div>
