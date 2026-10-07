@@ -1,6 +1,6 @@
-import type { KeyboardEvent, ReactNode, Ref } from 'react'
+import { useContext, type KeyboardEvent, type ReactNode, type Ref } from 'react'
 
-import { DESTINATIONS, type Destination } from './nav.ts'
+import { DESTINATIONS, PadLayoutContext, type Destination, type PadLayout } from './nav.ts'
 
 /** 3DS-style bitmapped Wi-Fi: 9×7 pixel fan, drawn as rects so it stays crisp. */
 const WIFI_PIXELS = [
@@ -12,6 +12,12 @@ const WIFI_PIXELS = [
   '.........',
   '....#....',
 ]
+
+/** Face-button positions in the Settings diamond: top, right, bottom, left. */
+const DIAMOND: Record<PadLayout, PadButton[]> = {
+  nintendo: ['X', 'A', 'B', 'Y'],
+  xbox: ['Y', 'B', 'A', 'X'],
+}
 
 /** Thor top panel is 837 × 471 dp. Square is a feasibility study for near-1:1 panels. */
 export type Canvas = 'thor' | 'square'
@@ -25,21 +31,25 @@ export type LegendItem = { button: PadButton; label: string }
 export function Screen({
   canvas,
   mode,
+  pad,
   children,
   onKeyDown,
   rootRef,
 }: {
   canvas: Canvas
   mode: Mode
+  pad?: PadLayout
   children: ReactNode
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void
   rootRef?: Ref<HTMLDivElement>
 }) {
+  const contextPad = useContext(PadLayoutContext)
   return (
     <div
       ref={rootRef}
       className={`ts-root ts-root--${canvas}`}
       data-mode={mode}
+      data-pad={pad ?? contextPad}
       tabIndex={0}
       onKeyDown={onKeyDown}
       style={{ ['--ts-rows' as string]: canvas === 'square' ? 4 : 3 }}
@@ -86,12 +96,31 @@ export function TopBar({
       <Pad button="R" />
       <span className="ts-topbar__spacer" />
       {showSearch ? <SearchPill query={query} /> : null}
-      <div className="ts-status">
-        <WifiGlyph online={online} />
-        <span>9:41</span>
-        <Battery />
-      </div>
+      <StatusCluster online={online} />
     </header>
+  )
+}
+
+/** Wi-Fi, clock, battery. Every screen carries it, including ones without tabs. */
+export function StatusCluster({ online }: { online: boolean }) {
+  return (
+    <div className="ts-status">
+      <WifiGlyph online={online} />
+      <span>9:41</span>
+      <Battery />
+    </div>
+  )
+}
+
+export function PadDiamond({ layout }: { layout: PadLayout }) {
+  const [top, right, bottom, left] = DIAMOND[layout]
+  return (
+    <span className="ts-diamond" data-pad={layout} aria-label={`${layout} layout`}>
+      <span className="ts-diamond__top"><Pad button={top} /></span>
+      <span className="ts-diamond__right"><Pad button={right} /></span>
+      <span className="ts-diamond__bottom"><Pad button={bottom} /></span>
+      <span className="ts-diamond__left"><Pad button={left} /></span>
+    </span>
   )
 }
 

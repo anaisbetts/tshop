@@ -220,6 +220,47 @@
   background: #4a5266;
 }
 
+/* Xbox glyph set: same letters, Xbox colours. A still confirms, B still backs out. */
+.ts-root[data-pad='xbox'],
+.ts-diamond[data-pad='xbox'] {
+  --ts-pad-a: #22b573;
+  --ts-pad-b: #ec4d4d;
+  --ts-pad-x: #3d7cf2;
+  --ts-pad-y: #f2b705;
+}
+
+.ts-root[data-pad='xbox'] .ts-pad--b { color: #fff; }
+.ts-root[data-pad='xbox'] .ts-pad--y { color: #3b2c00; }
+
+.ts-diamond {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+}
+
+.ts-diamond > span {
+  position: absolute;
+  display: grid;
+}
+
+.ts-diamond .ts-pad {
+  width: 17px;
+  min-width: 17px;
+  height: 17px;
+  font-size: 9.5px;
+}
+
+.ts-diamond__top { top: 0; left: 16px; }
+.ts-diamond__right { top: 16px; right: 0; }
+.ts-diamond__bottom { bottom: 0; left: 16px; }
+.ts-diamond__left { top: 16px; left: 0; }
+
+.ts-diamond__right .ts-pad--a,
+.ts-diamond__bottom .ts-pad--a {
+  box-shadow: 0 0 0 2px var(--ts-focus-gap), 0 0 0 4px var(--ts-accent);
+}
+
 /* ---------- info strip (what is focused) ---------- */
 
 .ts-info {
@@ -348,6 +389,40 @@
   grid-auto-columns: var(--ts-tile);
   gap: var(--ts-gap);
   margin: auto 0;
+}
+
+.ts-frame--empty {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ts-ghost {
+  border-radius: var(--ts-r-tile);
+  background: var(--ts-chip);
+  box-shadow: 0 0 0 1.5px var(--ts-hairline) inset;
+}
+
+.ts-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  color: var(--ts-ink-2);
+  font-size: 14px;
+  font-weight: var(--ts-w-display);
+  background: radial-gradient(closest-side, var(--ts-wall-top) 30%, transparent);
+}
+
+.ts-root[data-mode='night'] .ts-empty {
+  background: radial-gradient(closest-side, var(--ts-wall-bottom) 30%, transparent);
+}
+
+.ts-empty .ts-legend__item {
+  color: var(--ts-ink-3);
+  font-size: var(--ts-size-ui);
 }
 
 /* ---------- tile ---------- */
@@ -832,6 +907,13 @@
   cursor: pointer;
 }
 
+.ts-shot.is-focused {
+  z-index: 2;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: var(--ts-focus-ring);
+  animation: ts-breathe 1.6s ease-in-out infinite;
+}
+
 .ts-shot img {
   display: block;
   width: 100%;
@@ -912,6 +994,14 @@
 .ts-facts dd {
   margin: 0;
   font-weight: var(--ts-w-ui);
+}
+
+.ts-need {
+  display: block;
+}
+
+.ts-need--unmet {
+  color: var(--ts-bad);
 }
 
 .ts-root--square .ts-detail__head {
@@ -1035,6 +1125,501 @@
 
 .ts-switch.is-on::after {
   transform: translateX(18px);
+}
+
+.ts-row__warn {
+  color: var(--ts-accent);
+  font-weight: var(--ts-w-ui);
+}
+
+.ts-row__layout {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts-row__layout > span:not(.ts-diamond) {
+  color: var(--ts-ink-3);
+}
+
+.ts-row__layout > span.is-on {
+  color: var(--ts-ink);
+}
+
+.ts-settings .ts-row {
+  min-height: 50px;
+  padding-block: 6px;
+}
+
+/* ---------- variant dialog ---------- */
+
+.ts-dialog {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 14, 24, 0.42);
+  backdrop-filter: blur(6px);
+}
+
+.ts-dialog__card {
+  display: grid;
+  gap: 8px;
+  width: min(440px, 88%);
+  padding: 16px 16px 8px;
+  border-radius: var(--ts-r-shelf);
+  background: var(--ts-card);
+  box-shadow: var(--ts-card-shadow), 0 24px 60px rgba(10, 14, 24, 0.35);
+}
+
+.ts-dialog__kicker,
+.ts-onboard__kicker {
+  margin: 0;
+  color: var(--ts-ink-3);
+  font-size: var(--ts-size-ui);
+  font-weight: var(--ts-w-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ts-dialog__title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.ts-dialog__rows {
+  display: grid;
+  gap: 2px;
+}
+
+/* ---------- screenshot viewer ---------- */
+
+.ts-viewer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #05070b;
+}
+
+.ts-viewer__blur {
+  position: absolute;
+  inset: -40px;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+  object-fit: cover;
+  filter: blur(36px) brightness(0.55) saturate(1.2);
+}
+
+.ts-viewer__shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ts-viewer__bar,
+.ts-viewer__foot {
+  position: absolute;
+  right: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ts-viewer__bar { top: 10px; }
+.ts-viewer__foot { bottom: 8px; }
+
+.ts-viewer__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--ts-r-pill);
+  background: var(--ts-shelf);
+  box-shadow: var(--ts-shelf-shadow);
+  color: var(--ts-ink);
+  font-size: 13px;
+  font-weight: var(--ts-w-display);
+  backdrop-filter: blur(14px) saturate(1.3);
+}
+
+.ts-root[data-mode='day'] .ts-viewer__pill {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.ts-root[data-mode='night'] .ts-viewer__pill {
+  background: rgba(24, 27, 36, 0.78);
+}
+
+.ts-viewer__pill--status {
+  padding: 0 6px;
+}
+
+.ts-viewer__pill .ts-legend {
+  height: auto;
+  padding: 0;
+}
+
+.ts-viewer__count {
+  color: var(--ts-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-viewer__arrow {
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.ts-viewer__arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.ts-viewer__arrow--prev { left: 12px; }
+.ts-viewer__arrow--next { right: 12px; }
+
+.ts-viewer__dots {
+  display: inline-flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--ts-r-pill);
+  background: rgba(10, 14, 24, 0.45);
+}
+
+.ts-viewer__dots > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  transition: width 140ms ease;
+}
+
+.ts-viewer__dots > span.is-on {
+  width: 20px;
+  border-radius: var(--ts-r-pill);
+  background: var(--ts-accent);
+}
+
+/* ---------- onboarding ---------- */
+
+.ts-topbar--bare {
+  padding-left: 5px;
+}
+
+.ts-wordmark {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.ts-onboard {
+  grid-row: 2 / span 2;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  align-items: center;
+  gap: 18px;
+  min-height: 0;
+  padding: 0 8px;
+}
+
+.ts-onboard__art {
+  display: grid;
+  place-items: center;
+}
+
+.ts-onboard__tiles {
+  display: grid;
+  grid-template-columns: repeat(3, var(--ts-tile));
+  gap: var(--ts-gap);
+  padding: 16px;
+  border-radius: var(--ts-r-shelf);
+  background: var(--ts-shelf);
+  box-shadow: var(--ts-shelf-shadow);
+}
+
+.ts-onboard__glyph.ts-tile {
+  --ts-tile: 150px;
+  border-radius: 36px;
+  cursor: default;
+}
+
+.ts-onboard__check {
+  right: -6px;
+  bottom: -6px;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.ts-onboard__card {
+  display: grid;
+  gap: 10px;
+  padding: 20px 22px;
+  border-radius: var(--ts-r-shelf);
+  background: var(--ts-card);
+  box-shadow: var(--ts-card-shadow);
+}
+
+.ts-onboard__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+.ts-onboard__body {
+  margin: 0;
+  color: var(--ts-ink-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.ts-onboard__body b {
+  color: var(--ts-ink);
+  font-weight: var(--ts-w-display);
+}
+
+.ts-onboard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 4px;
+}
+
+.ts-onboard__dots {
+  background: var(--ts-chip);
+}
+
+.ts-onboard__dots > span {
+  background: var(--ts-ink-3);
+}
+
+.ts-root--square .ts-onboard {
+  grid-template-columns: 1fr;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+}
+
+.ts-root--square .ts-onboard__tiles {
+  --ts-tile: 52px;
+  grid-template-columns: repeat(9, var(--ts-tile));
+  padding: 10px;
+}
+
+.ts-root--square .ts-onboard__tiles .ts-tile {
+  border-radius: 13px;
+}
+
+.ts-root--square .ts-onboard__glyph.ts-tile {
+  --ts-tile: 96px;
+  border-radius: 26px;
+}
+
+.ts-root--square .ts-onboard__check {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+}
+
+/* ---------- about ---------- */
+
+.ts-about {
+  grid-row: 2 / span 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 12px;
+  min-height: 0;
+  margin-top: 6px;
+}
+
+.ts-about__side {
+  display: grid;
+  gap: 10px;
+}
+
+.ts-about__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px;
+}
+
+.ts-logo--big {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 28px;
+}
+
+.ts-about__rows {
+  width: 100%;
+  margin: 0;
+}
+
+.ts-policy p {
+  font-size: var(--ts-size-ui);
+}
+
+.ts-policy__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 2px 0 8px;
+}
+
+.ts-policy__head {
+  margin: 0 0 2px;
+  color: var(--ts-ink);
+  font-weight: var(--ts-w-display);
+}
+
+.ts-policy ul {
+  font-size: var(--ts-size-ui);
+  line-height: 1.5;
+}
+
+.ts-root--square .ts-about {
+  grid-template-columns: 1fr;
+  overflow: hidden;
+}
+
+.ts-root--square .ts-about__brand {
+  display: none;
+}
+
+/* ---------- public stats page (web, not in-app) ---------- */
+
+.ts-root.ts-web {
+  display: grid;
+  grid-template-rows: none;
+  gap: 16px;
+  width: 1100px;
+  height: auto;
+  padding: 28px 32px 32px;
+  overflow: visible;
+}
+
+.ts-web__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ts-web__title {
+  margin: 0 0 2px;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.015em;
+}
+
+.ts-web__totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.ts-web__total p {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.ts-web__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.ts-web__side {
+  display: grid;
+  gap: 12px;
+}
+
+.ts-web__table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ts-web__table th {
+  padding: 6px 8px;
+  color: var(--ts-ink-3);
+  font-size: var(--ts-size-small);
+  font-weight: var(--ts-w-display);
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.ts-web__table td {
+  padding: 5px 8px;
+  border-top: 1px solid var(--ts-hairline);
+  font-weight: var(--ts-w-ui);
+}
+
+.ts-web__table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ts-web__table .rank,
+.ts-web__table .muted {
+  color: var(--ts-ink-3);
+}
+
+.ts-web__app {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts-web__tile.ts-tile {
+  --ts-tile: 30px;
+  border-radius: 8px;
+  cursor: default;
+}
+
+.ts-web__bar {
+  display: inline-block;
+  width: 70px;
+  height: 6px;
+  margin-right: 10px;
+  overflow: hidden;
+  border-radius: var(--ts-r-pill);
+  background: var(--ts-chip);
+  vertical-align: middle;
+}
+
+.ts-web__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ts-accent);
 }
 
 /* ---------- specimen sheets (not product screens) ---------- */

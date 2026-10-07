@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 
 import type { Entry } from './catalog.ts'
 import type { Focus, Frame } from './nav.ts'
@@ -11,12 +11,15 @@ export function Shelf({
   context,
   onFocus,
   onOpen,
+  empty,
 }: {
   frames: Frame[]
   focus: Focus
   context: TileContext
   onFocus: (focus: Focus) => void
   onOpen?: (entry: Entry) => void
+  /** Shown in a frame of ghost slots when there are no frames at all. */
+  empty?: ReactNode
 }) {
   const stripRef = useRef<HTMLDivElement>(null)
 
@@ -29,6 +32,7 @@ export function Shelf({
 
   return (
     <div className="ts-strip" ref={stripRef}>
+      {frames.length === 0 && empty ? <EmptyFrame>{empty}</EmptyFrame> : null}
       {frames.map((frame) => (
         <section className="ts-frame" key={frame.id}>
           <div className="ts-frame__head">
@@ -55,5 +59,18 @@ export function Shelf({
         </section>
       ))}
     </div>
+  )
+}
+
+function EmptyFrame({ children }: { children: ReactNode }) {
+  return (
+    <section className="ts-frame ts-frame--empty">
+      <div className="ts-frame__grid" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, n) => (
+          <span className="ts-ghost" key={n} />
+        ))}
+      </div>
+      <div className="ts-empty">{children}</div>
+    </section>
   )
 }

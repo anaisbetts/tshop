@@ -29,4 +29,14 @@ export const UnmetCapability: Story = { args: { initialFocus: 'vita3k' } }
 
 export const SearchResults: Story = { args: { query: 'games', initialFocus: 'ppsspp' } }
 
+/** Every frame emptied, so every frame is gone; clearing is the only move. */
+export const SearchNoResults: Story = { args: { query: 'zelda' } }
+
+export const SearchNoResultsNight: Story = { args: { query: 'zelda', mode: 'night' } }
+
+/** Publisher-only entry: same tile, no install mark; Detail offers Go to Publisher. */
+export const LandingPage: Story = { args: { initialFocus: 'duckstation' } }
+
 export const Offline: Story = { args: { online: false, initialFocus: 'retroarch' } }
+
+export const OfflineNight: Story = { args: { online: false, mode: 'night', initialFocus: 'retroarch' } }
