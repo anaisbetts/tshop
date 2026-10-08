@@ -48,6 +48,8 @@ enum TileContext {
   library,
 }
 
+enum _Mark { installed, foreign, update, failed }
+
 /// Unlabelled square app tile with a status mark, focus ring and lift.
 class TshopTile extends HookWidget {
   /// Creates a tile.
@@ -317,8 +319,6 @@ class TshopActionTile extends HookWidget {
     );
   }
 }
-
-enum _Mark { installed, foreign, update, failed }
 
 class _TileProgress extends StatelessWidget {
   const _TileProgress({required this.value, this.done = false});
