@@ -147,6 +147,7 @@ class _PaletteSection extends StatelessWidget {
               spacing: 6,
               children: [
                 Container(
+                  width: double.infinity,
                   height: 52,
                   foregroundDecoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
@@ -717,6 +718,7 @@ class _BrowseMock extends HookWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: 8,
                 children: [
                   const TshopTopBar(

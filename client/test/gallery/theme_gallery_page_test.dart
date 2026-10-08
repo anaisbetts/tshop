@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tshop/src/gallery/theme_gallery_page.dart';
 import 'package:tshop/src/theme/tshop_theme.dart';
 import 'package:tshop/src/theme/tshop_tokens.dart';
+import 'package:tshop/src/theme/widgets/pad_glyph.dart';
+import 'package:tshop/src/theme/widgets/tshop_chip.dart';
 import 'package:tshop/src/theme/widgets/tshop_settings.dart';
 import 'package:tshop/src/theme/widgets/tshop_tile.dart';
 import 'package:tshop/src/theme/widgets/tshop_wallpaper.dart';
@@ -25,6 +27,8 @@ void main() {
 
     expect(find.text('BROWSE ON THOR (837 × 471)'), findsOneWidget);
     expect(find.byType(TshopTile), findsWidgets);
+    expect(tester.getSize(find.byType(TshopChip).first).width, lessThan(400));
+    expect(tester.getSize(find.byType(PadGlyph).at(4)).width, lessThan(40));
     expect(tester.takeException(), isNull);
     expect(_tokensOf(tester).brightness, Brightness.light);
 

@@ -48,15 +48,17 @@ class TshopChip extends StatelessWidget {
     return Container(
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: fill,
         borderRadius: BorderRadius.circular(TshopMetrics.pillRadius),
       ),
-      child: Text(
-        label,
-        maxLines: 1,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: ink),
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          maxLines: 1,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: ink),
+        ),
       ),
     );
   }
@@ -76,18 +78,20 @@ class TshopCountBadge extends StatelessWidget {
       height: 16,
       constraints: const BoxConstraints(minWidth: 16),
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: TshopBrand.accent,
         borderRadius: BorderRadius.circular(TshopMetrics.pillRadius),
       ),
-      child: Text(
-        '$count',
-        style: const TextStyle(
-          color: TshopBrand.accentInk,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          height: 1,
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          '$count',
+          style: const TextStyle(
+            color: TshopBrand.accentInk,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            height: 1,
+          ),
         ),
       ),
     );

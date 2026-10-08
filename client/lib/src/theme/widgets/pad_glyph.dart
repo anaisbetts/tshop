@@ -75,18 +75,20 @@ class PadGlyph extends StatelessWidget {
       constraints: BoxConstraints(minWidth: size),
       width: isFace ? size : null,
       padding: isFace ? null : EdgeInsets.symmetric(horizontal: size * 0.28),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: fill ?? background,
         borderRadius: BorderRadius.circular(TshopMetrics.pillRadius),
       ),
-      child: Text(
-        button.label,
-        style: TextStyle(
-          color: ink ?? foreground,
-          fontSize: size * 0.56,
-          fontWeight: FontWeight.w800,
-          height: 1,
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          button.label,
+          style: TextStyle(
+            color: ink ?? foreground,
+            fontSize: size * 0.56,
+            fontWeight: FontWeight.w800,
+            height: 1,
+          ),
         ),
       ),
     );

@@ -242,9 +242,11 @@ class TshopDownloadsPill extends StatelessWidget {
           Container(
             height: 18,
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            alignment: Alignment.center,
             decoration: BoxDecoration(color: tokens.chip, borderRadius: pill),
-            child: Text(go, style: text.labelSmall),
+            child: Center(
+              widthFactor: 1,
+              child: Text(go, style: text.labelSmall),
+            ),
           ),
         ],
       ),
