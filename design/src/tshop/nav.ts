@@ -1,10 +1,15 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { createContext, useRef, useState, type ReactNode } from 'react'
 
 import type { Entry } from './catalog.ts'
 
 export const DESTINATIONS = ['browse', 'library', 'settings'] as const
 
 export type Destination = (typeof DESTINATIONS)[number]
+
+/** Which glyph set the hints use (from 04: a user setting, labelled on screen). A confirms, B backs out, in both. */
+export type PadLayout = 'nintendo' | 'xbox'
+
+export const PadLayoutContext = createContext<PadLayout>('nintendo')
 
 export type Frame = {
   id: string
