@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tshop/src/routing/app_router.dart';
+import 'package:tshop/src/theme/tshop_theme.dart';
 
 /// Root widget: [MaterialApp.router] wired to [appRouterProvider].
 class TshopApp extends HookConsumerWidget {
@@ -12,6 +13,8 @@ class TshopApp extends HookConsumerWidget {
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
       title: 'tShop',
+      theme: buildTshopTheme(Brightness.light),
+      darkTheme: buildTshopTheme(Brightness.dark),
       routerConfig: router,
     );
   }

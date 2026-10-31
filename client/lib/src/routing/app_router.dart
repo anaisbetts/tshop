@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:talker_flutter/talker_flutter.dart';
+import 'package:tshop/src/gallery/theme_gallery_page.dart';
 import 'package:tshop/src/logging/app_talker.dart';
 import 'package:tshop/src/routing/app_routes.dart';
 
@@ -17,6 +18,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.home,
         name: 'home',
         builder: (context, state) => const PlaceholderPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.gallery,
+        name: 'gallery',
+        builder: (context, state) => const ThemeGalleryPage(),
       ),
     ],
   );
@@ -48,6 +54,12 @@ class PlaceholderPage extends ConsumerWidget {
                 child: title,
               )
             : title,
+        actions: [
+          TextButton(
+            onPressed: () => context.go(AppRoutes.gallery),
+            child: const Text('Theme gallery'),
+          ),
+        ],
       ),
     );
   }
