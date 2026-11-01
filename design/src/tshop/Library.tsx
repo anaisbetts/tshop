@@ -1,7 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 
 import { CATALOG, libraryCount, type Entry, type Status } from './catalog.ts'
-import { Legend, Screen, TopBar, type Canvas, type LegendItem, type Mode } from './Chrome.tsx'
+import { Legend, Pad, Screen, TopBar, type Canvas, type LegendItem, type Mode } from './Chrome.tsx'
 import { InfoStrip } from './Info.tsx'
 import { keyDir, useShelfFocus, type Focus, type Frame } from './nav.ts'
 import { Shelf } from './Shelf.tsx'
@@ -19,6 +19,8 @@ export type LibraryProps = {
   canvas?: Canvas
   mode?: Mode
   online?: boolean
+  /** What the device scan found. Defaults to the sample catalog's states. */
+  entries?: Entry[]
   /** Entry id, or `update-all` to start on the Updates frame's action tile. */
   initialFocus?: string
   onOpen?: (entry: Entry) => void
@@ -26,13 +28,22 @@ export type LibraryProps = {
 }
 
 /** Same framed grid as Browse; frames are install states instead of categories. */
-export function Library({ canvas = 'thor', mode = 'day', online = true, initialFocus, onOpen, onSwitch }: LibraryProps) {
+export function Library({
+  canvas = 'thor',
+  mode = 'day',
+  online = true,
+  entries = CATALOG,
+  initialFocus,
+  onOpen,
+  onSwitch,
+}: LibraryProps) {
   const rows = canvas === 'square' ? 4 : 3
-  const frames = libraryFrames()
+  const frames = libraryFrames(entries)
   const shelf = useShelfFocus(frames, rows, initialFocus)
   const rootRef = useRef<HTMLDivElement>(null)
-  const focused = entryFor(shelf.focus)
+  const focused = entries.find((entry) => entry.id === shelf.focus) ?? null
   const updates = frames.find((frame) => frame.id === 'updates')?.entries.length ?? 0
+  const queued = frames.some((frame) => frame.id === 'queue')
 
   useEffect(() => {
     rootRef.current?.focus({ preventScroll: true })
@@ -63,24 +74,50 @@ export function Library({ canvas = 'thor', mode = 'day', online = true, initialF
 
   return (
     <Screen canvas={canvas} mode={mode} onKeyDown={onKeyDown} rootRef={rootRef}>
-      <TopBar destination="library" libraryCount={libraryCount()} online={online} />
-      <InfoStrip
-        entry={focused}
+      <TopBar destination="library" libraryCount={libraryCount(entries)} online={online} />
+      {frames.length > 0 ? (
+        <InfoStrip
+          entry={focused}
+          context="library"
+          fallbackTitle={`Update all ${updates} apps`}
+          fallbackSummary="Downloads start now. The rest of the queue keeps going if one fails."
+        />
+      ) : (
+        <InfoStrip
+          entry={null}
+          context="library"
+          fallbackTitle="Nothing from the catalog yet"
+          fallbackSummary="Apps you install from Browse, and catalog apps already on this device, show up here."
+        />
+      )}
+      <Shelf
+        frames={frames}
+        focus={shelf.focus}
         context="library"
-        fallbackTitle={`Update all ${updates} apps`}
-        fallbackSummary="Downloads start now. The rest of the queue keeps going if one fails."
+        onFocus={shelf.pick}
+        onOpen={onOpen}
+        empty={
+          <>
+            Library fills in as you install.
+            <span className="ts-legend__item">
+              <Pad button="L" /> Browse
+            </span>
+          </>
+        }
       />
-      <Shelf frames={frames} focus={shelf.focus} context="library" onFocus={shelf.pick} onOpen={onOpen} />
-      <Legend left={legendFor(shelf.focus, focused)} middle={<ConfirmNote />} />
+      <Legend
+        left={frames.length > 0 ? legendFor(shelf.focus, focused) : [{ button: 'L', label: 'Browse' }]}
+        middle={queued ? <ConfirmNote /> : null}
+      />
     </Screen>
   )
 }
 
-function libraryFrames(): Frame[] {
+function libraryFrames(entries: Entry[]): Frame[] {
   return FRAMES.map(({ id, label, statuses }) => ({
     id,
     label,
-    entries: CATALOG.filter((entry) => statuses.includes(entry.status)),
+    entries: entries.filter((entry) => statuses.includes(entry.status)),
     lead: id === 'updates' ? { id: UPDATE_ALL, render: (focused: boolean) => <UpdateAllTile focused={focused} /> } : undefined,
   })).filter((frame) => frame.entries.length > 0)
 }
@@ -115,8 +152,4 @@ function legendFor(focus: Focus, entry: Entry | null): LegendItem[] {
     default:
       return base
   }
-}
-
-function entryFor(focus: Focus): Entry | null {
-  return CATALOG.find((entry) => entry.id === focus) ?? null
 }

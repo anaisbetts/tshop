@@ -27,6 +27,12 @@ metadata (`https://f-droid.org/repo/<package>/en-US/icon_*.png`):
 | retroarch.png | com.retroarch |
 | pixel-dungeon.png | com.shatteredpixel.shatteredpixeldungeon |
 
+`duckstation.png` is `data/resources/images/duck.png` from
+[stenzek/duckstation](https://github.com/stenzek/duckstation) at commit
+`7be1ad0`. DuckStation is the Landing Page example from
+`specs/03-hosting-and-bandwidth.md`: its license does not allow tShop to
+redistribute the APK.
+
 Each tile's backdrop colour and icon scale live in `catalog.ts`. They stand in
 for the square tile the catalog pipeline would bake.
 

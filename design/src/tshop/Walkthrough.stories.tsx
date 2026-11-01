@@ -19,4 +19,7 @@ type Story = StoryObj<typeof meta>
 
 export const Thor: Story = {}
 
+/** Starts at Onboarding, the way a fresh install does. */
+export const FirstLaunch: Story = { args: { firstLaunch: true } }
+
 export const Square: Story = { args: { canvas: 'square' } }
