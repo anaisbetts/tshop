@@ -20,7 +20,7 @@ export type AboutProps = {
   onBack?: () => void
 }
 
-/** Settings › About. Quotes the PRD's "What tShop knows about you" and links to the dashboard. */
+/** Settings › About. Version, licenses, source, support, and a link to the public stats dashboard. */
 export function About({ canvas = 'thor', mode = 'day', online = true, initialFocus = 'stats', onBack }: AboutProps) {
   const [focus, setFocus] = useState<Row>(initialFocus)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -52,26 +52,23 @@ export function About({ canvas = 'thor', mode = 'day', online = true, initialFoc
     <Screen canvas={canvas} mode={mode} onKeyDown={onKeyDown} rootRef={rootRef}>
       <TopBar destination="settings" libraryCount={libraryCount()} online={online} />
       <section className="ts-about">
-        <div className="ts-about__side">
-          <div className="ts-about__brand">
-            <span className="ts-logo ts-logo--big" aria-hidden="true">
-              t
-            </span>
-            <div>
-              <p className="ts-row__title">tShop 1.0.0</p>
-              <p className="ts-row__desc">Free Software · catalog 6 Oct 2026</p>
-            </div>
-          </div>
-          <div className="ts-settings ts-about__rows">
-            {ROWS.map((row) => (
-              <div className={`ts-row${focus === row.id ? ' is-focused' : ''}`} key={row.id} onMouseEnter={() => setFocus(row.id)}>
-                <p className="ts-row__title">{row.title}</p>
-                <span className="ts-row__value">{row.value}</span>
-              </div>
-            ))}
+        <div className="ts-about__brand">
+          <span className="ts-logo ts-logo--big" aria-hidden="true">
+            t
+          </span>
+          <div>
+            <p className="ts-row__title">tShop 1.0.0</p>
+            <p className="ts-row__desc">Free Software · catalog 6 Oct 2026</p>
           </div>
         </div>
-        <PolicyCard />
+        <div className="ts-settings ts-about__rows">
+          {ROWS.map((row) => (
+            <div className={`ts-row${focus === row.id ? ' is-focused' : ''}`} key={row.id} onMouseEnter={() => setFocus(row.id)}>
+              <p className="ts-row__title">{row.title}</p>
+              <span className="ts-row__value">{row.value}</span>
+            </div>
+          ))}
+        </div>
       </section>
       <Legend
         left={[

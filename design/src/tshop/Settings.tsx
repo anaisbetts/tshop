@@ -119,7 +119,7 @@ export function Settings({
         <div className={row('about')} onMouseEnter={() => setFocus('about')}>
           <div>
             <p className="ts-row__title">About tShop</p>
-            <p className="ts-row__desc">What tShop knows about you, licenses, source, public stats</p>
+            <p className="ts-row__desc">Licenses, source, support, public stats</p>
           </div>
           <span className="ts-row__value">›</span>
         </div>
