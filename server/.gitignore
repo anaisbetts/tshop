@@ -1,0 +1,4 @@
+node_modules/
+.wrangler/
+.seed-cache/
+dist/

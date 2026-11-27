@@ -1,0 +1,19 @@
+{
+  "name": "tshop-dev-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --ip 0.0.0.0 --port 8787",
+    "db:migrate:catalog": "wrangler d1 migrations apply tshop-catalog --local",
+    "db:migrate:analytics": "wrangler d1 migrations apply tshop-analytics --local",
+    "db:migrate": "bun run db:migrate:catalog && bun run db:migrate:analytics",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260401.0",
+    "@types/bun": "latest",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.129.0"
+  }
+}
