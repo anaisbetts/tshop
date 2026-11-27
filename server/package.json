@@ -7,6 +7,7 @@
     "db:migrate:catalog": "wrangler d1 migrations apply tshop-catalog --local",
     "db:migrate:analytics": "wrangler d1 migrations apply tshop-analytics --local",
     "db:migrate": "bun run db:migrate:catalog && bun run db:migrate:analytics",
+    "seed": "bun run scripts/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },

@@ -32,8 +32,8 @@ export interface Catalog {
   generatedAt: string;
   /** Normally `https://dl.tshop.../apk`; flipped to `https://cdn.tshop...` by the degrade lever. */
   apkBaseUrl: string;
-  /** Current tShop build, for self-update. */
-  client: ClientRelease;
+  /** Current tShop build, for self-update. Null when no client release is published yet. */
+  client: ClientRelease | null;
   /** Labels for every tag used by any entry. */
   capabilityTags: CapabilityTag[];
   /** Browse frames in fixed curator order; empty categories are omitted. */
