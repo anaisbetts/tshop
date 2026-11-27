@@ -41,8 +41,13 @@ export type Entry = {
   progress?: number
   failure?: string
   unmet?: string[]
+  /** Publisher-only entry (03): same tile and detail, primary action is Go to Publisher. */
   landingPage?: string
+  /** Only set when the catalog marks the release's APKs as a genuine user choice. */
+  variants?: Variant[]
 }
+
+export type Variant = { label: string; note: string; size: string }
 
 export type DetailArt = {
   feature: string
@@ -125,6 +130,25 @@ export const CATALOG: Entry[] = [
     scale: 1.1,
     icon: art('icons/flycast.png'),
     status: 'available',
+    variants: [
+      { label: 'Vulkan renderer', note: 'Faster on most current handhelds', size: '16 MB' },
+      { label: 'OpenGL ES renderer', note: 'For older or unusual GPU drivers', size: '15 MB' },
+    ],
+  },
+  {
+    id: 'duckstation',
+    name: 'DuckStation',
+    publisher: 'Stenzek',
+    category: 'Emulators',
+    summary: 'PlayStation games with upscaling and fast, accurate emulation.',
+    version: '0.1',
+    released: '12 May 2025',
+    size: '—',
+    backdrop: 'linear-gradient(160deg, #24304d 0%, #141b30 100%)',
+    scale: 0.8,
+    icon: art('icons/duckstation.png'),
+    status: 'available',
+    landingPage: 'This emulator’s license does not allow tShop to redistribute it.',
   },
   {
     id: 'scummvm',
@@ -307,8 +331,8 @@ export const DETAIL_ART: Record<string, DetailArt> = {
 }
 
 /** Library tab badge: queued items plus available updates. */
-export function libraryCount(): number {
-  return CATALOG.filter((entry) => ['downloading', 'confirm', 'failed', 'update'].includes(entry.status)).length
+export function libraryCount(entries: Entry[] = CATALOG): number {
+  return entries.filter((entry) => ['downloading', 'confirm', 'failed', 'update'].includes(entry.status)).length
 }
 
 export function byId(id: string): Entry {

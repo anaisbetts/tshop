@@ -33,6 +33,37 @@ are in `src/tshop/art/SOURCES.md`.
 - Type is **M PLUS Rounded 1c**: 900 for Detail titles, 800 for names and
   frames, 700 for UI, 500 for body.
 
+## Every spec'd page
+
+Each page and state named in `specs/02-screens.md`, plus the two the other
+specs add (Landing Page from `03`, button layout from `04`). Nothing here is
+beyond those.
+
+| Spec | Stories |
+|---|---|
+| Onboarding: what tShop is, Install unknown apps, Notifications, Finish; re-shown when revoked | **Onboarding** |
+| Browse: framed grid, installed / update / greyed tiles, download strip | **Browse** Day, Night, UnmetCapability |
+| Browse search: commit-then-view, empty frames drop, clear control | **Browse** SearchResults, SearchNoResults |
+| Browse offline: cached catalog, Install disabled | **Browse** Offline, **Detail** Offline |
+| App Detail: Install, Update, Open, Retry, Other source, progress | **Detail** |
+| Detail: capabilities met / unmet | **Detail** UnmetCapability |
+| Detail: variant dialog, only when the catalog marks a real choice | **Detail** VariantChoice |
+| Landing Page (`03`): Go to Publisher | **Browse** LandingPage, **Detail** LandingPage |
+| Screenshot viewer: fullscreen, left / right, Back | **Screenshot viewer**, **Detail** ScreenshotFocused |
+| Library: Queue, Updates + Update All, Up to date, Other source, badge | **Library** |
+| Library: nothing installed yet, nothing to update | **Library** Empty, AllUpToDate |
+| Settings: notifications, Privacy Mode, check now, catalog timestamp | **Settings** |
+| Button layout (`04`): Nintendo vs Xbox glyphs | **Settings** ButtonLayout* |
+| About: version, licenses, source, support, policy, stats link | **About** |
+| Public stats dashboard (web page, not in-app) | **Public stats (web page)** |
+| Wi-Fi status glyph | top bar of every screen; **Browse** Offline |
+
+Not drawn, because the spec puts them in Android's hands: the system IME,
+Android Settings' install toggle, the runtime permission prompt, the package
+installer's confirm dialog, the uninstall prompt, and the update
+notification's look (its text is spec'd: "3 updates available: RetroArch,
+Dolphin, +1").
+
 ## Canvases
 
 `thor` is 837 × 471 dp (the Thor's top panel). `square` is 592 × 516 dp and
@@ -43,4 +74,7 @@ dual-screen layout.
 ## Keyboard
 
 In **Walkthrough**: arrows move, Enter opens / toggles, Escape goes back,
-`[` / `]` are L / R, `y` commits a sample search, and `x` clears it.
+`[` / `]` are L / R, `y` commits a sample search, and `x` clears it. On
+Detail, Down moves into the screenshot strip and Enter opens the viewer.
+Settings › About opens About; toggling Button layout re-glyphs every screen.
+**FirstLaunch** starts at Onboarding.
