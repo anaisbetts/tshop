@@ -15,6 +15,9 @@ const _wifiPixels = [
 ];
 
 const _wifiOfflineX = [(6, 4), (8, 4), (7, 5), (6, 6), (8, 6)];
+const double _legendHintHorizontalPadding = 4;
+const double _legendHintVerticalPadding = 2;
+const double _legendGroupSpacing = 4;
 
 /// Top-level destinations in the top bar.
 enum TshopDestination {
@@ -34,7 +37,27 @@ enum TshopDestination {
 }
 
 /// One controller hint in a [TshopLegend].
-typedef LegendItem = ({PadButton button, String label});
+@immutable
+class LegendItem {
+  /// Creates a controller hint.
+  ///
+  /// Pass [onTap] for actionable controls so touch and pointer users can
+  /// activate them directly; omit it for non-interactive directional hints.
+  const LegendItem({
+    required this.button,
+    required this.label,
+    this.onTap,
+  });
+
+  /// Controller glyph shown before [label].
+  final PadButton button;
+
+  /// Human-readable action label.
+  final String label;
+
+  /// Optional tap callback making this hint interactive.
+  final VoidCallback? onTap;
+}
 
 /// Frosted pill across the top: logo, L / tabs / R, search, status.
 class TshopTopBar extends StatelessWidget {
@@ -153,34 +176,74 @@ class TshopLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.labelMedium;
     Widget group(List<LegendItem> items) => Row(
       mainAxisSize: MainAxisSize.min,
-      spacing: 12,
+      spacing: _legendGroupSpacing,
       children: [
-        for (final item in items)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 5,
-            children: [
-              PadGlyph(item.button),
-              Text(item.label, style: style),
-            ],
-          ),
+        for (final item in items) TshopLegendHint(item: item),
       ],
     );
     return SizedBox(
       height: 26,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Row(
-          children: [
-            group(left),
-            const Spacer(),
-            ?middle,
-            const Spacer(),
-            group(right),
-          ],
+      child: Row(
+        children: [
+          group(left),
+          const Spacer(),
+          ?middle,
+          const Spacer(),
+          group(right),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single rendered [LegendItem] (glyph + label), tappable when
+/// [LegendItem.onTap] is provided.
+class TshopLegendHint extends StatelessWidget {
+  /// Creates a legend hint for [item].
+  const TshopLegendHint({required this.item, super.key});
+
+  /// Controller glyph, label, and optional tap handler.
+  final LegendItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.labelMedium;
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _legendHintHorizontalPadding,
+        vertical: _legendHintVerticalPadding,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: 5,
+        children: [
+          PadGlyph(item.button),
+          Text(item.label, style: style),
+        ],
+      ),
+    );
+
+    final onTap = item.onTap;
+    if (onTap == null) {
+      return content;
+    }
+
+    return Semantics(
+      button: true,
+      label: item.label,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(TshopMetrics.pillRadius),
+            child: content,
+          ),
         ),
       ),
     );
