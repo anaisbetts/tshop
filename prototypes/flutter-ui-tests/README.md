@@ -4,7 +4,7 @@ Throwaway Flutter harness for [specs/98-prototype-this-first.md](../../specs/98-
 
 ## Run
 
-From this folder, with [fvm](https://fvm.app) installed:
+From this folder, with [fvm](https://fvm.app) installed (pin is `.fvmrc`, currently 3.50.1):
 
 ```bash
 ./flutterw run

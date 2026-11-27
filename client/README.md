@@ -6,7 +6,7 @@ services are stubbed on web.
 
 ## Toolchain
 
-From `client/`, use the FVM wrappers (pin is `.fvmrc`, currently 3.47.2):
+From `client/`, use the FVM wrappers (pin is `.fvmrc`, currently 3.50.1):
 
 ```bash
 ./flutterw run -d chrome   # web demo
