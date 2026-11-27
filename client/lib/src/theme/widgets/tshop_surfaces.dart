@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:tshop/src/theme/tshop_tokens.dart';
 import 'package:tshop/src/theme/widgets/tshop_chip.dart';
 

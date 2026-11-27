@@ -1,6 +1,6 @@
 import 'dart:ui' show lerpDouble;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Mode-independent brand colours from `design/src/tshop/tokens.css`.
 abstract final class TshopBrand {
