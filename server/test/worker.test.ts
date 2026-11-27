@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vite-plus/test";
 import worker from "../src/index";
 import { createTestHarness } from "./mocks";
 
@@ -10,7 +10,7 @@ const SAMPLE_CATALOG_SHA =
 const SAMPLE_ART_SHA =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const SAMPLE_APK_BYTES = new TextEncoder().encode(
-  "PK\x03\x04fake-android-apk-payload-0123456789",
+  "PK\u0003\u0004fake-android-apk-payload-0123456789",
 );
 
 describe("worker routing and /health", () => {
@@ -19,7 +19,7 @@ describe("worker routing and /health", () => {
     const res = await worker.fetch(
       new Request(`${BASE_URL}/health`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
 
     expect(res.status).toBe(200);
@@ -37,7 +37,7 @@ describe("worker routing and /health", () => {
         method: "OPTIONS",
       }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
 
     expect(res.status).toBe(204);
@@ -51,7 +51,7 @@ describe("worker routing and /health", () => {
     const res = await worker.fetch(
       new Request(`${BASE_URL}/does-not-exist`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
 
     expect(res.status).toBe(404);
@@ -66,7 +66,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
     const res = await worker.fetch(
       new Request(`${BASE_URL}/pointer.json`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
 
     expect(res.status).toBe(404);
@@ -91,7 +91,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
     const first = await worker.fetch(
       new Request(`${BASE_URL}/pointer.json`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(first.status).toBe(200);
     expect(first.headers.get("Content-Type")).toBe(
@@ -107,7 +107,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
         headers: { "If-None-Match": stored.httpEtag },
       }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(notModified.status).toBe(304);
     expect(notModified.headers.get("ETag")).toBe(stored.httpEtag);
@@ -120,14 +120,14 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
         headers: { "If-None-Match": `W/${stored.httpEtag}` },
       }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(weakNotModified.status).toBe(304);
 
     const headRes = await worker.fetch(
       new Request(`${BASE_URL}/pointer.json`, { method: "HEAD" }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(headRes.status).toBe(200);
     expect(headRes.headers.get("Content-Length")).toBe(String(payload.length));
@@ -145,7 +145,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
     const res = await worker.fetch(
       new Request(`${BASE_URL}/catalog/catalog-${SAMPLE_CATALOG_SHA}.json`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe(
@@ -160,7 +160,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
     const badShort = await worker.fetch(
       new Request(`${BASE_URL}/catalog/catalog-abc.json`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(badShort.status).toBe(404);
 
@@ -169,7 +169,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
         `${BASE_URL}/catalog/catalog-${SAMPLE_CATALOG_SHA.toUpperCase()}.json`,
       ),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(badUpper.status).toBe(404);
   });
@@ -187,7 +187,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
     const webpRes = await worker.fetch(
       new Request(`${BASE_URL}/art/${SAMPLE_ART_SHA}.webp`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(webpRes.status).toBe(200);
     expect(webpRes.headers.get("Content-Type")).toBe("image/webp");
@@ -200,7 +200,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
     const pngRes = await worker.fetch(
       new Request(`${BASE_URL}/art/${SAMPLE_ART_SHA}.png`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(pngRes.status).toBe(200);
     expect(pngRes.headers.get("Content-Type")).toBe("image/png");
@@ -208,7 +208,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
     const jpgRes = await worker.fetch(
       new Request(`${BASE_URL}/art/${SAMPLE_ART_SHA}.jpg`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(jpgRes.status).toBe(200);
     expect(jpgRes.headers.get("Content-Type")).toBe("image/jpeg");
@@ -223,7 +223,7 @@ describe("static routes (/pointer.json, /catalog/*, /art/*)", () => {
       const badRes = await worker.fetch(
         new Request(`${BASE_URL}${badPath}`),
         env,
-        ctx as unknown as ExecutionContext,
+        ctx.asExecutionContext(),
       );
       expect(badRes.status).toBe(404);
     }
@@ -238,7 +238,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
     const installRes = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA}.apk?r=install`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(installRes.status).toBe(200);
     expect(installRes.headers.get("Content-Type")).toBe(
@@ -264,7 +264,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
     const installAgain = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA}.apk?r=install`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(installAgain.status).toBe(200);
     await installAgain.arrayBuffer();
@@ -273,7 +273,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
     const updateRes = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA}.apk?r=update`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(updateRes.status).toBe(200);
     await updateRes.arrayBuffer();
@@ -282,7 +282,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
     const unknownMissingRes = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA}.apk`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(unknownMissingRes.status).toBe(200);
     await unknownMissingRes.arrayBuffer();
@@ -291,7 +291,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
     const unknownBogusRes = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA}.apk?r=other`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(unknownBogusRes.status).toBe(200);
     await unknownBogusRes.arrayBuffer();
@@ -314,7 +314,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
         method: "HEAD",
       }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     await ctx.flush();
 
@@ -338,7 +338,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
         headers: { Range: "bytes=0-9" },
       }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     const body = new Uint8Array(await res.arrayBuffer());
     await ctx.flush();
@@ -362,7 +362,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
         headers: { Range: "bytes=0-3, 5-8" },
       }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     await ctx.flush();
 
@@ -376,21 +376,21 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
     const missing = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA}.apk?r=install`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(missing.status).toBe(404);
 
     const invalidUpper = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA.toUpperCase()}.apk`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(invalidUpper.status).toBe(404);
 
     const invalidShort = await worker.fetch(
       new Request(`${BASE_URL}/apk/not-a-sha.apk`),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(invalidShort.status).toBe(404);
 
@@ -403,7 +403,7 @@ describe("APK download route (/apk/<sha256>.apk)", () => {
     const res = await worker.fetch(
       new Request(`${BASE_URL}/apk/${SAMPLE_APK_SHA}.apk`, { method: "POST" }),
       env,
-      ctx as unknown as ExecutionContext,
+      ctx.asExecutionContext(),
     );
     expect(res.status).toBe(405);
     expect(res.headers.get("Allow")).toContain("GET");

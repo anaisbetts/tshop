@@ -35,11 +35,11 @@ export interface Catalog {
   /** Current tShop build, for self-update. Null when no client release is published yet. */
   client: ClientRelease | null;
   /** Labels for every tag used by any entry. */
-  capabilityTags: CapabilityTag[];
+  capabilityTags: Array<CapabilityTag>;
   /** Browse frames in fixed curator order; empty categories are omitted. */
-  categories: CategoryFrame[];
+  categories: Array<CategoryFrame>;
   /** Every published entry, in global popularity order (rank 1 first). */
-  entries: Entry[];
+  entries: Array<Entry>;
 }
 
 export interface CapabilityTag {
@@ -51,7 +51,7 @@ export interface CategoryFrame {
   id: CategoryId;
   name: Localized;
   /** Package names in frame order: global order filtered to this category, then editorial pins applied. */
-  entries: string[];
+  entries: Array<string>;
 }
 
 export interface Entry {
@@ -63,29 +63,29 @@ export interface Entry {
   publisher: string;
   category: CategoryId;
   /** Matched by on-device search together with name, summary, and description. */
-  searchTags: string[];
+  searchTags: Array<string>;
   summary: Localized;
   /** Paragraphs. */
-  description: Localized<string[]>;
-  compatNotes: Localized<string[]> | null;
+  description: Localized<Array<string>>;
+  compatNotes: Localized<Array<string>> | null;
   /** Detail's Upstream page action. */
   homepageUrl: string;
   rehostMode: RehostMode;
   /** Set if and only if `rehostMode === 'landing'`. */
   landing: LandingInfo | null;
   /** Active publisher cert SHA-256 fingerprints; empty for landing entries. */
-  allowedSigningCerts: string[];
+  allowedSigningCerts: Array<string>;
   /** Tags from `capabilityTags`. */
-  capabilities: string[];
+  capabilities: Array<string>;
   /** Composited live by the client; never pre-baked. */
   tile: Tile;
   /** Null makes Detail fall back to the tile backdrop wash. */
   featureUrl: string | null;
-  screenshots: Screenshot[];
+  screenshots: Array<Screenshot>;
   /** Latest approved release. Null only for landing entries with no known release. */
   release: Release | null;
   /** Up to the last 5 approved releases, newest first; `changelogs[0]` is `release`. */
-  changelogs: Changelog[];
+  changelogs: Array<Changelog>;
 }
 
 export interface LandingInfo {
@@ -114,13 +114,13 @@ export interface Release {
   releasedAt: string;
   variantsAreUserChoice: boolean;
   /** Empty for landing entries. */
-  variants: Variant[];
+  variants: Array<Variant>;
 }
 
 export interface Variant {
   sha256: string;
   sizeBytes: number;
-  abis: string[];
+  abis: Array<string>;
   minSdk: number;
   targetSdk: number;
   /** Present when `variantsAreUserChoice`; shown in the variant dialog. */
@@ -135,14 +135,14 @@ export interface Changelog {
   versionName: string;
   releasedAt: string;
   /** Bullets. */
-  notes: Localized<string[]>;
+  notes: Localized<Array<string>>;
 }
 
 export interface ClientRelease {
   versionCode: number;
   versionName: string;
   releasedAt: string;
-  notes: Localized<string[]>;
+  notes: Localized<Array<string>>;
   sha256: string;
   sizeBytes: number;
   minSdk: number;

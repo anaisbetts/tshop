@@ -1,16 +1,22 @@
-import { Database } from "bun:sqlite";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { deflateSync } from "node:zlib";
+import { spawnSync } from "node:child_process";
 import {
-  buildSignedArtifacts,
-  compileCatalog,
-  type CatalogQueryDb,
-  type SqlParam,
-} from "../src/compiler";
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
+import { join, resolve } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import type { SQLInputValue } from "node:sqlite";
+import { deflateSync } from "node:zlib";
+import { buildSignedArtifacts, compileCatalog } from "../src/compiler";
+import type { CatalogQueryDb, SqlParam } from "../src/compiler";
 import { DEV_KEY_ID, sha256Hex } from "../src/signing";
 
-const SERVER_ROOT = resolve(import.meta.dir, "..");
+const SERVER_ROOT = resolve(import.meta.dirname, "..");
+const ASSETS_DIR = join(import.meta.dirname, "assets");
+const WAYFINDER_FEATURE_ASSET_PATH = join(ASSETS_DIR, "wayfinder-feature.png");
 const SEED_CACHE_DIR = join(SERVER_ROOT, ".seed-cache");
 const APK_CACHE_DIR = join(SEED_CACHE_DIR, "apks");
 const ART_CACHE_DIR = join(SEED_CACHE_DIR, "art");
@@ -84,7 +90,7 @@ const BETA_RELEASE_SPEC: ReleaseSpec = {
   ],
 };
 
-const SCREENSHOT_SPECS: readonly ScreenshotSpec[] = [
+const SCREENSHOT_SPECS: ReadonlyArray<ScreenshotSpec> = [
   {
     id: "d19e4cc4-f3bb-48d2-b82d-f45442e1722a",
     label: "Hub & combos",
@@ -111,8 +117,8 @@ const ICON_SIZE = 256;
 const PNG_SIGNATURE = new Uint8Array([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
 ]);
-const ZIP_EOCD_SIGNATURE = 0x06054b50;
-const ZIP_CEN_SIGNATURE = 0x02014b50;
+const ZIP_EOCD_SIGNATURE = 0x06_05_4b_50;
+const ZIP_CEN_SIGNATURE = 0x02_01_4b_50;
 const APK_LIB_ABI_PATTERN = /^lib\/([^/]+)\/[^/]+$/;
 const CRC32_TABLE = buildCrc32Table();
 
@@ -127,7 +133,7 @@ interface ReleaseSpec {
   sha256: string;
   minSdk: number;
   targetSdk: number;
-  changelog: readonly string[];
+  changelog: ReadonlyArray<string>;
 }
 
 interface PreparedRelease {
@@ -135,7 +141,7 @@ interface PreparedRelease {
   state: "approved" | "superseded";
   apkPath: string;
   sizeBytes: number;
-  abis: string[];
+  abis: Array<string>;
 }
 
 interface ScreenshotSpec {
@@ -145,7 +151,7 @@ interface ScreenshotSpec {
 }
 
 interface PreparedImage {
-  kind: "icon" | "screenshot";
+  kind: "icon" | "feature" | "screenshot";
   label: string;
   sourceUrl: string;
   rightsBasis: string;
@@ -157,10 +163,13 @@ interface PreparedImage {
   height: number;
 }
 
-interface ImageDimensions {
-  ext: ImageExtension;
+interface ImageSize {
   width: number;
   height: number;
+}
+
+interface ImageDimensions extends ImageSize {
+  ext: ImageExtension;
 }
 
 async function main(): Promise<void> {
@@ -171,6 +180,7 @@ async function main(): Promise<void> {
 
   const releases = await prepareReleases(channel);
   const icon = prepareWayfinderIcon();
+  const feature = prepareWayfinderFeature();
   const screenshots = await prepareScreenshots();
 
   console.log("Applying local D1 migrations...");
@@ -180,11 +190,11 @@ async function main(): Promise<void> {
   const generatedAt = new Date().toISOString();
 
   console.log(`Populating local D1 catalog (${catalogDbPath})...`);
-  const db = new Database(catalogDbPath);
+  const db = new DatabaseSync(catalogDbPath);
   let artifacts: ReturnType<typeof buildSignedArtifacts>;
   let entryCount: number;
   try {
-    seedCatalogDatabase(db, releases, icon, screenshots, generatedAt);
+    seedCatalogDatabase(db, releases, icon, feature, screenshots, generatedAt);
     const catalog = await compileCatalog(createSqliteCatalogDb(db), {
       generatedAt,
     });
@@ -218,6 +228,12 @@ async function main(): Promise<void> {
     icon.filePath,
     imageContentType(icon.ext),
   );
+  uploadToLocalR2(
+    "tshop-assets",
+    `public/art/${feature.filename}`,
+    feature.filePath,
+    imageContentType(feature.ext),
+  );
   for (const shot of screenshots) {
     uploadToLocalR2(
       "tshop-assets",
@@ -249,6 +265,7 @@ async function main(): Promise<void> {
     activeRelease,
     releases,
     icon,
+    feature,
     screenshots,
     artifacts,
   );
@@ -256,7 +273,7 @@ async function main(): Promise<void> {
 
 async function prepareReleases(
   channel: SeedChannel,
-): Promise<PreparedRelease[]> {
+): Promise<Array<PreparedRelease>> {
   switch (channel) {
     case "stable":
       return [await downloadAndInspectApk(STABLE_RELEASE_SPEC, "approved")];
@@ -283,7 +300,9 @@ async function downloadAndInspectApk(
       console.log(`Using cached APK: ${apkPath}`);
       bytes = cached;
     } else {
-      console.log(`Cached APK checksum mismatch; re-downloading ${spec.versionName}...`);
+      console.log(
+        `Cached APK checksum mismatch; re-downloading ${spec.versionName}...`,
+      );
       bytes = await fetchBinary(spec.upstreamUrl);
       writeFileSync(apkPath, bytes);
     }
@@ -332,8 +351,37 @@ function prepareWayfinderIcon(): PreparedImage {
   };
 }
 
-async function prepareScreenshots(): Promise<PreparedImage[]> {
-  const prepared: PreparedImage[] = [];
+function prepareWayfinderFeature(): PreparedImage {
+  if (!existsSync(WAYFINDER_FEATURE_ASSET_PATH)) {
+    throw new Error(
+      `Wayfinder feature graphic not found at ${WAYFINDER_FEATURE_ASSET_PATH}.`,
+    );
+  }
+  const bytes = new Uint8Array(readFileSync(WAYFINDER_FEATURE_ASSET_PATH));
+  const info = parseImageMetadata(bytes, "Wayfinder feature graphic");
+  const sha256 = sha256Hex(bytes);
+  const filename = `${sha256}.${info.ext}`;
+  const filePath = join(ART_CACHE_DIR, filename);
+  if (!existsSync(filePath)) {
+    writeFileSync(filePath, bytes);
+  }
+
+  return {
+    kind: "feature",
+    label: "Wayfinder feature banner",
+    sourceUrl: "local://server/scripts/assets/wayfinder-feature.png",
+    rightsBasis: "Generated abstract feature artwork for tShop storefront",
+    ext: info.ext,
+    sha256,
+    filename,
+    filePath,
+    width: info.width,
+    height: info.height,
+  };
+}
+
+async function prepareScreenshots(): Promise<Array<PreparedImage>> {
+  const prepared: Array<PreparedImage> = [];
 
   for (const spec of SCREENSHOT_SPECS) {
     const rawCachePath = join(ART_CACHE_DIR, `src-${spec.id}.bin`);
@@ -373,30 +421,36 @@ async function prepareScreenshots(): Promise<PreparedImage[]> {
 }
 
 function seedCatalogDatabase(
-  db: Database,
-  releases: readonly PreparedRelease[],
+  db: DatabaseSync,
+  releases: ReadonlyArray<PreparedRelease>,
   icon: PreparedImage,
-  screenshots: readonly PreparedImage[],
+  feature: PreparedImage,
+  screenshots: ReadonlyArray<PreparedImage>,
   now: string,
 ): void {
-  const tx = db.transaction(() => {
-    db.query(
+  db.exec("BEGIN");
+  try {
+    db.prepare(
       "UPDATE apps SET approved_release_id = NULL, previous_release_id = NULL WHERE package_name = ?",
     ).run(WAYFINDER_PACKAGE);
 
-    db.query(
+    db.prepare(
       "DELETE FROM release_variants WHERE release_id IN (SELECT id FROM releases WHERE package_name = ?)",
     ).run(WAYFINDER_PACKAGE);
-    db.query("DELETE FROM releases WHERE package_name = ?").run(WAYFINDER_PACKAGE);
-    db.query("DELETE FROM app_assets WHERE package_name = ?").run(
+    db.prepare("DELETE FROM releases WHERE package_name = ?").run(
       WAYFINDER_PACKAGE,
     );
-    db.query("DELETE FROM app_certs WHERE package_name = ?").run(
+    db.prepare("DELETE FROM app_assets WHERE package_name = ?").run(
       WAYFINDER_PACKAGE,
     );
-    db.query("DELETE FROM apps WHERE package_name = ?").run(WAYFINDER_PACKAGE);
+    db.prepare("DELETE FROM app_certs WHERE package_name = ?").run(
+      WAYFINDER_PACKAGE,
+    );
+    db.prepare("DELETE FROM apps WHERE package_name = ?").run(
+      WAYFINDER_PACKAGE,
+    );
 
-    db.query(
+    db.prepare(
       `INSERT INTO apps (
         package_name,
         slug,
@@ -451,7 +505,7 @@ function seedCatalogDatabase(
       now,
     );
 
-    db.query(
+    db.prepare(
       `INSERT INTO app_certs (
         package_name,
         sha256_fingerprint,
@@ -474,7 +528,7 @@ function seedCatalogDatabase(
 
     for (const release of releases) {
       const insertResult = db
-        .query(
+        .prepare(
           `INSERT INTO releases (
             package_name,
             version_code,
@@ -509,7 +563,7 @@ function seedCatalogDatabase(
         previousReleaseId = releaseId;
       }
 
-      db.query(
+      db.prepare(
         `INSERT INTO release_variants (
           release_id,
           sha256,
@@ -536,11 +590,11 @@ function seedCatalogDatabase(
       );
     }
 
-    db.query(
+    db.prepare(
       "UPDATE apps SET approved_release_id = ?, previous_release_id = ? WHERE package_name = ?",
     ).run(approvedReleaseId, previousReleaseId, WAYFINDER_PACKAGE);
 
-    const insertAssetStmt = db.query(
+    const insertAssetStmt = db.prepare(
       `INSERT INTO app_assets (
         package_name,
         kind,
@@ -570,22 +624,19 @@ function seedCatalogDatabase(
       now,
     );
 
-    const featureShot = screenshots[0];
-    if (featureShot) {
-      insertAssetStmt.run(
-        WAYFINDER_PACKAGE,
-        "feature",
-        0,
-        `raw/${featureShot.filename}`,
-        featureShot.filename,
-        null,
-        featureShot.width,
-        featureShot.height,
-        featureShot.sourceUrl,
-        featureShot.rightsBasis,
-        now,
-      );
-    }
+    insertAssetStmt.run(
+      WAYFINDER_PACKAGE,
+      "feature",
+      0,
+      `raw/${feature.filename}`,
+      feature.filename,
+      null,
+      feature.width,
+      feature.height,
+      feature.sourceUrl,
+      feature.rightsBasis,
+      now,
+    );
 
     for (let index = 0; index < screenshots.length; index++) {
       const shot = screenshots[index];
@@ -603,18 +654,21 @@ function seedCatalogDatabase(
         now,
       );
     }
-  });
 
-  tx();
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 function recordPublishHistory(
-  db: Database,
+  db: DatabaseSync,
   generatedAt: string,
   catalogSha256: string,
   entryCount: number,
 ): void {
-  db.query(
+  db.prepare(
     `INSERT INTO publish_history (
       generated_at,
       schema_version,
@@ -630,11 +684,14 @@ function recordPublishHistory(
   ).run(generatedAt, DEV_KEY_ID, catalogSha256, entryCount, generatedAt);
 }
 
-function createSqliteCatalogDb(db: Database): CatalogQueryDb {
+function createSqliteCatalogDb(db: DatabaseSync): CatalogQueryDb {
   return {
-    all<T>(sql: string, params: readonly SqlParam[] = []): T[] {
-      const stmt = db.query(sql);
-      return stmt.all(...(params as Parameters<typeof stmt.all>)) as T[];
+    all<T>(sql: string, params: ReadonlyArray<SqlParam> = []): Array<T> {
+      const stmt = db.prepare(sql);
+      const sqlParams: Array<SQLInputValue> = [...params];
+      const rows = stmt.all(...sqlParams).map((row) => ({ ...row }));
+      // oxlint-disable-next-line quality/no-chained-type-assertions, typescript/no-unsafe-type-assertion -- node:sqlite StatementSync.all() is untyped and bridges to CatalogQueryDb<T>.
+      return rows as unknown as Array<T>;
     },
   };
 }
@@ -651,14 +708,14 @@ function findCatalogSqlitePath(): string {
     .map((name) => join(WRANGLER_D1_DIR, name));
 
   for (const candidate of candidates) {
-    const db = new Database(candidate, { readonly: true });
+    const db = new DatabaseSync(candidate, { readOnly: true });
     try {
       const row = db
-        .query(
+        .prepare(
           "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'apps'",
         )
         .get();
-      if (row !== null) {
+      if (row !== undefined) {
         return candidate;
       }
     } finally {
@@ -692,17 +749,17 @@ function uploadToLocalR2(
   ]);
 }
 
-function runCommand(cmd: string[]): void {
-  const result = Bun.spawnSync(cmd, {
+function runCommand(cmd: ReadonlyArray<string>): void {
+  const [command, ...args] = cmd;
+  const result = spawnSync(command, args, {
     cwd: SERVER_ROOT,
-    stdout: "pipe",
-    stderr: "pipe",
+    encoding: "utf8",
   });
-  if (result.exitCode !== 0) {
-    const stdout = new TextDecoder().decode(result.stdout).trim();
-    const stderr = new TextDecoder().decode(result.stderr).trim();
+  if (result.status !== 0) {
+    const stdout = (result.stdout ?? "").trim();
+    const stderr = (result.stderr ?? "").trim();
     throw new Error(
-      `Command failed (${result.exitCode}): ${cmd.join(" ")}\n${stdout}\n${stderr}`,
+      `Command failed (${result.status ?? -1}): ${cmd.join(" ")}\n${stdout}\n${stderr}`,
     );
   }
 }
@@ -720,16 +777,20 @@ async function fetchBinary(url: string): Promise<Uint8Array> {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-function inspectApkAbis(apkBytes: Uint8Array): string[] {
+function inspectApkAbis(apkBytes: Uint8Array): Array<string> {
   const view = new DataView(
     apkBytes.buffer,
     apkBytes.byteOffset,
     apkBytes.byteLength,
   );
-  const minEocdOffset = Math.max(0, apkBytes.byteLength - 65557);
+  const minEocdOffset = Math.max(0, apkBytes.byteLength - 65_557);
   let eocdOffset = -1;
 
-  for (let offset = apkBytes.byteLength - 22; offset >= minEocdOffset; offset--) {
+  for (
+    let offset = apkBytes.byteLength - 22;
+    offset >= minEocdOffset;
+    offset--
+  ) {
     if (view.getUint32(offset, true) === ZIP_EOCD_SIGNATURE) {
       eocdOffset = offset;
       break;
@@ -737,7 +798,9 @@ function inspectApkAbis(apkBytes: Uint8Array): string[] {
   }
 
   if (eocdOffset === -1) {
-    throw new Error("Invalid APK/ZIP archive: End of Central Directory not found.");
+    throw new Error(
+      "Invalid APK/ZIP archive: End of Central Directory not found.",
+    );
   }
 
   const totalEntries = view.getUint16(eocdOffset + 10, true);
@@ -751,12 +814,16 @@ function inspectApkAbis(apkBytes: Uint8Array): string[] {
       break;
     }
     if (view.getUint32(pos, true) !== ZIP_CEN_SIGNATURE) {
-      throw new Error("Invalid APK/ZIP archive: corrupt Central Directory entry.");
+      throw new Error(
+        "Invalid APK/ZIP archive: corrupt Central Directory entry.",
+      );
     }
     const nameLen = view.getUint16(pos + 28, true);
     const extraLen = view.getUint16(pos + 30, true);
     const commentLen = view.getUint16(pos + 32, true);
-    const name = decoder.decode(apkBytes.subarray(pos + 46, pos + 46 + nameLen));
+    const name = decoder.decode(
+      apkBytes.subarray(pos + 46, pos + 46 + nameLen),
+    );
     const match = APK_LIB_ABI_PATTERN.exec(name);
     if (match !== null) {
       abis.add(match[1]);
@@ -781,7 +848,10 @@ function parseImageMetadata(bytes: Uint8Array, label: string): ImageDimensions {
   }
 }
 
-function detectImageExtension(bytes: Uint8Array, label: string): ImageExtension {
+function detectImageExtension(
+  bytes: Uint8Array,
+  label: string,
+): ImageExtension {
   if (
     bytes.byteLength >= 8 &&
     PNG_SIGNATURE.every((byte, idx) => bytes[idx] === byte)
@@ -807,10 +877,7 @@ function detectImageExtension(bytes: Uint8Array, label: string): ImageExtension 
   throw new Error(`Unsupported or unrecognized image format for "${label}".`);
 }
 
-function parsePngDimensions(
-  bytes: Uint8Array,
-  label: string,
-): { width: number; height: number } {
+function parsePngDimensions(bytes: Uint8Array, label: string): ImageSize {
   if (bytes.byteLength < 24) {
     throw new Error(`Truncated PNG header for "${label}".`);
   }
@@ -822,7 +889,9 @@ function parsePngDimensions(
     bytes[15],
   );
   if (chunkType !== "IHDR") {
-    throw new Error(`Expected PNG IHDR chunk for "${label}", found "${chunkType}".`);
+    throw new Error(
+      `Expected PNG IHDR chunk for "${label}", found "${chunkType}".`,
+    );
   }
   return {
     width: view.getUint32(16, false),
@@ -830,10 +899,7 @@ function parsePngDimensions(
   };
 }
 
-function parseJpegDimensions(
-  bytes: Uint8Array,
-  label: string,
-): { width: number; height: number } {
+function parseJpegDimensions(bytes: Uint8Array, label: string): ImageSize {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let pos = 2;
 
@@ -881,10 +947,7 @@ function isJpegSofMarker(marker: number): boolean {
   );
 }
 
-function parseWebpDimensions(
-  bytes: Uint8Array,
-  label: string,
-): { width: number; height: number } {
+function parseWebpDimensions(bytes: Uint8Array, label: string): ImageSize {
   if (bytes.byteLength < 30) {
     throw new Error(`Truncated WebP header for "${label}".`);
   }
@@ -908,8 +971,8 @@ function parseWebpDimensions(
     }
     const bits = view.getUint32(21, true);
     return {
-      width: (bits & 0x3fff) + 1,
-      height: ((bits >> 14) & 0x3fff) + 1,
+      width: (bits & 0x3f_ff) + 1,
+      height: ((bits >> 14) & 0x3f_ff) + 1,
     };
   }
 
@@ -918,8 +981,8 @@ function parseWebpDimensions(
       throw new Error(`Invalid WebP VP8 keyframe header for "${label}".`);
     }
     return {
-      width: view.getUint16(26, true) & 0x3fff,
-      height: view.getUint16(28, true) & 0x3fff,
+      width: view.getUint16(26, true) & 0x3f_ff,
+      height: view.getUint16(28, true) & 0x3f_ff,
     };
   }
 
@@ -1060,10 +1123,7 @@ function encodeRgbaPng(
   const raw = new Uint8Array((stride + 1) * height);
   for (let y = 0; y < height; y++) {
     raw[y * (stride + 1)] = 0;
-    raw.set(
-      rgba.subarray(y * stride, (y + 1) * stride),
-      y * (stride + 1) + 1,
-    );
+    raw.set(rgba.subarray(y * stride, (y + 1) * stride), y * (stride + 1) + 1);
   }
 
   const ihdr = new Uint8Array(13);
@@ -1112,7 +1172,7 @@ function buildCrc32Table(): Uint32Array {
   for (let i = 0; i < 256; i++) {
     let c = i;
     for (let bit = 0; bit < 8; bit++) {
-      c = (c & 1) !== 0 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      c = (c & 1) !== 0 ? 0xed_b8_83_20 ^ (c >>> 1) : c >>> 1;
     }
     table[i] = c >>> 0;
   }
@@ -1120,11 +1180,11 @@ function buildCrc32Table(): Uint32Array {
 }
 
 function crc32(bytes: Uint8Array): number {
-  let crc = 0xffffffff;
+  let crc = 0xff_ff_ff_ff;
   for (let i = 0; i < bytes.byteLength; i++) {
     crc = CRC32_TABLE[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
   }
-  return (crc ^ 0xffffffff) >>> 0;
+  return (crc ^ 0xff_ff_ff_ff) >>> 0;
 }
 
 function imageContentType(ext: ImageExtension): string {
@@ -1140,7 +1200,7 @@ function imageContentType(ext: ImageExtension): string {
   }
 }
 
-function parseSeedChannel(args: readonly string[]): SeedChannel {
+function parseSeedChannel(args: ReadonlyArray<string>): SeedChannel {
   if (args.includes("--beta")) {
     return "beta";
   }
@@ -1156,9 +1216,10 @@ function ensureCacheDirs(): void {
 function printSummary(
   channel: SeedChannel,
   activeRelease: PreparedRelease,
-  allReleases: readonly PreparedRelease[],
+  allReleases: ReadonlyArray<PreparedRelease>,
   icon: PreparedImage,
-  screenshots: readonly PreparedImage[],
+  feature: PreparedImage,
+  screenshots: ReadonlyArray<PreparedImage>,
   artifacts: ReturnType<typeof buildSignedArtifacts>,
 ): void {
   const abiLabel =
@@ -1172,19 +1233,30 @@ function printSummary(
   console.log(
     `Active release: ${WAYFINDER_NAME} ${activeRelease.spec.versionName} (versionCode ${activeRelease.spec.versionCode})`,
   );
-  console.log(`Seeded history: ${allReleases.map((r) => `${r.spec.versionName} (${r.state})`).join(", ")}`);
+  console.log(
+    `Seeded history: ${allReleases.map((r) => `${r.spec.versionName} (${r.state})`).join(", ")}`,
+  );
   console.log(`APK SHA-256:    ${activeRelease.spec.sha256}`);
   console.log(`APK size:       ${activeRelease.sizeBytes} bytes`);
   console.log(`APK ABIs:       ${abiLabel}`);
-  console.log(`Icon art:       /art/${icon.filename} (${icon.width}x${icon.height})`);
+  console.log(
+    `Icon art:       /art/${icon.filename} (${icon.width}x${icon.height})`,
+  );
+  console.log(
+    `Feature art:    /art/${feature.filename} (${feature.width}x${feature.height})`,
+  );
   for (const shot of screenshots) {
     console.log(
       `Screenshot:     /art/${shot.filename} (${shot.width}x${shot.height}, ${shot.label})`,
     );
   }
   console.log(`Catalog SHA256: ${artifacts.catalogSha256}`);
-  console.log(`Catalog URL:    ${artifacts.catalogUrl} (${artifacts.catalogBytes.byteLength} bytes)`);
-  console.log(`Pointer URL:    http://localhost:8787/pointer.json (keyId: ${artifacts.pointer.keyId})`);
+  console.log(
+    `Catalog URL:    ${artifacts.catalogUrl} (${artifacts.catalogBytes.byteLength} bytes)`,
+  );
+  console.log(
+    `Pointer URL:    http://localhost:8787/pointer.json (keyId: ${artifacts.pointer.keyId})`,
+  );
   console.log("");
   console.log("Start the local dev server with:");
   console.log("  bun run dev");

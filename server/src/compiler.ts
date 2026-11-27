@@ -3,8 +3,8 @@ import {
   DEV_PRIVATE_SEED_BASE64,
   sha256Hex,
   signPointer,
-  type UnsignedPointer,
 } from "./signing";
+import type { UnsignedPointer } from "./signing";
 import type {
   CapabilityTag,
   Catalog,
@@ -26,7 +26,7 @@ const DEFAULT_APK_BASE_URL = "/apk";
 const DEFAULT_MIN_CLIENT_VERSION_CODE = 1;
 const DEFAULT_STATS_URL = "https://stats.tshop.local/";
 const MAX_CHANGELOGS_PER_ENTRY = 5;
-const CATEGORY_ORDER: readonly CategoryId[] = [
+const CATEGORY_ORDER: ReadonlyArray<CategoryId> = [
   "Emulators",
   "Frontends",
   "Games",
@@ -132,7 +132,10 @@ LIMIT 1`;
 export type SqlParam = string | number | bigint | Uint8Array | null;
 
 export interface CatalogQueryDb {
-  all<T>(sql: string, params?: readonly SqlParam[]): T[] | Promise<T[]>;
+  all<T>(
+    sql: string,
+    params?: ReadonlyArray<SqlParam>,
+  ): Array<T> | Promise<Array<T>>;
 }
 
 export interface CompileCatalogOptions {
@@ -237,7 +240,14 @@ interface ClientReleaseRow {
 interface GroupedAssets {
   iconUrl: string | null;
   featureUrl: string | null;
-  screenshots: Screenshot[];
+  screenshots: Array<Screenshot>;
+}
+
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | Array<JsonValue> | JsonObject;
+
+interface JsonObject {
+  [key: string]: JsonValue;
 }
 
 export async function compileCatalog(
@@ -284,9 +294,9 @@ export async function compileCatalog(
     ),
   );
 
-  const capabilityTags: CapabilityTag[] = capabilityTagRows.map((row) => ({
+  const capabilityTags: Array<CapabilityTag> = capabilityTagRows.map((row) => ({
     tag: row.tag,
-    label: parseJson<Localized>(row.label_i18n, `capability_tags.${row.tag}`),
+    label: parseJsonLocalized(row.label_i18n, `capability_tags.${row.tag}`),
   }));
 
   const categories = buildCategoryFrames(entries);
@@ -345,10 +355,10 @@ export function buildSignedArtifacts(
 function buildEntry(
   app: AppRow,
   rank: number,
-  activeCerts: readonly string[],
+  activeCerts: ReadonlyArray<string>,
   releasesById: ReadonlyMap<number, ReleaseRow>,
-  packageReleases: readonly ReleaseRow[],
-  variantsByReleaseId: ReadonlyMap<number, Variant[]>,
+  packageReleases: ReadonlyArray<ReleaseRow>,
+  variantsByReleaseId: ReadonlyMap<number, Array<Variant>>,
   assets: GroupedAssets | undefined,
 ): Entry {
   if (assets?.iconUrl === undefined || assets.iconUrl === null) {
@@ -359,8 +369,7 @@ function buildEntry(
 
   const rehostMode = validateRehostMode(app.rehost_mode);
   const landing = buildLandingInfo(app, rehostMode);
-  const allowedSigningCerts =
-    rehostMode === "landing" ? [] : [...activeCerts];
+  const allowedSigningCerts = rehostMode === "landing" ? [] : [...activeCerts];
 
   const approvedReleaseRow =
     app.approved_release_id === null
@@ -378,25 +387,25 @@ function buildEntry(
     packageName: app.package_name,
     slug: app.slug,
     rank,
-    name: parseJson<Localized>(app.name_i18n, `${app.package_name}.name_i18n`),
+    name: parseJsonLocalized(app.name_i18n, `${app.package_name}.name_i18n`),
     publisher: app.publisher,
     category: validateCategoryId(app.primary_category),
-    searchTags: parseJson<string[]>(
+    searchTags: parseJsonStringArray(
       app.search_tags,
       `${app.package_name}.search_tags`,
     ),
-    summary: parseJson<Localized>(
+    summary: parseJsonLocalized(
       app.summary_i18n,
       `${app.package_name}.summary_i18n`,
     ),
-    description: parseJson<Localized<string[]>>(
+    description: parseJsonLocalizedStringArray(
       app.description_i18n,
       `${app.package_name}.description_i18n`,
     ),
     compatNotes:
       app.compat_notes_i18n === null
         ? null
-        : parseJson<Localized<string[]>>(
+        : parseJsonLocalizedStringArray(
             app.compat_notes_i18n,
             `${app.package_name}.compat_notes_i18n`,
           ),
@@ -404,7 +413,7 @@ function buildEntry(
     rehostMode,
     landing,
     allowedSigningCerts,
-    capabilities: parseJson<string[]>(
+    capabilities: parseJsonStringArray(
       app.capabilities,
       `${app.package_name}.capabilities`,
     ),
@@ -438,7 +447,7 @@ function buildLandingInfo(
         );
       }
       return {
-        reason: parseJson<Localized>(
+        reason: parseJsonLocalized(
           app.landing_reason_i18n,
           `${app.package_name}.landing_reason_i18n`,
         ),
@@ -453,7 +462,7 @@ function buildLandingInfo(
 function buildRelease(
   row: ReleaseRow | null,
   rehostMode: RehostMode,
-  variantsByReleaseId: ReadonlyMap<number, Variant[]>,
+  variantsByReleaseId: ReadonlyMap<number, Array<Variant>>,
 ): Release | null {
   if (row === null) {
     return null;
@@ -473,7 +482,9 @@ function buildRelease(
   };
 }
 
-function buildChangelogs(packageReleases: readonly ReleaseRow[]): Changelog[] {
+function buildChangelogs(
+  packageReleases: ReadonlyArray<ReleaseRow>,
+): Array<Changelog> {
   return [...packageReleases]
     .sort(compareReleaseRowsDesc)
     .slice(0, MAX_CHANGELOGS_PER_ENTRY)
@@ -484,19 +495,24 @@ function buildChangelogs(packageReleases: readonly ReleaseRow[]): Changelog[] {
       notes:
         row.changelog_i18n === null
           ? { en: [] }
-          : parseJson<Localized<string[]>>(
+          : parseJsonLocalizedStringArray(
               row.changelog_i18n,
               `releases.${row.id}.changelog_i18n`,
             ),
     }));
 }
 
-function buildCategoryFrames(entries: readonly Entry[]): CategoryFrame[] {
-  const frames: CategoryFrame[] = [];
+function buildCategoryFrames(
+  entries: ReadonlyArray<Entry>,
+): Array<CategoryFrame> {
+  const frames: Array<CategoryFrame> = [];
   for (const categoryId of CATEGORY_ORDER) {
-    const matching = entries
-      .filter((entry) => entry.category === categoryId)
-      .map((entry) => entry.packageName);
+    const matching: Array<string> = [];
+    for (const entry of entries) {
+      if (entry.category === categoryId) {
+        matching.push(entry.packageName);
+      }
+    }
     if (matching.length > 0) {
       frames.push({
         id: categoryId,
@@ -518,7 +534,7 @@ function buildClientRelease(
     versionCode: row.version_code,
     versionName: row.version_name,
     releasedAt: row.released_at,
-    notes: parseJson<Localized<string[]>>(
+    notes: parseJsonLocalizedStringArray(
       row.changelog_i18n,
       `client_releases.${row.version_code}.changelog_i18n`,
     ),
@@ -530,9 +546,9 @@ function buildClientRelease(
 }
 
 function groupCertsByPackage(
-  rows: readonly CertRow[],
-): Map<string, string[]> {
-  const map = new Map<string, string[]>();
+  rows: ReadonlyArray<CertRow>,
+): Map<string, Array<string>> {
+  const map = new Map<string, Array<string>>();
   for (const row of rows) {
     const list = map.get(row.package_name);
     if (list) {
@@ -545,9 +561,9 @@ function groupCertsByPackage(
 }
 
 function groupReleasesByPackage(
-  rows: readonly ReleaseRow[],
-): Map<string, ReleaseRow[]> {
-  const map = new Map<string, ReleaseRow[]>();
+  rows: ReadonlyArray<ReleaseRow>,
+): Map<string, Array<ReleaseRow>> {
+  const map = new Map<string, Array<ReleaseRow>>();
   for (const row of rows) {
     const list = map.get(row.package_name);
     if (list) {
@@ -560,7 +576,7 @@ function groupReleasesByPackage(
 }
 
 function indexReleasesById(
-  rows: readonly ReleaseRow[],
+  rows: ReadonlyArray<ReleaseRow>,
 ): Map<number, ReleaseRow> {
   const map = new Map<number, ReleaseRow>();
   for (const row of rows) {
@@ -570,27 +586,30 @@ function indexReleasesById(
 }
 
 function groupVariantsByReleaseId(
-  rows: readonly VariantRow[],
-): Map<number, Variant[]> {
-  const map = new Map<number, Variant[]>();
+  rows: ReadonlyArray<VariantRow>,
+): Map<number, Array<Variant>> {
+  const map = new Map<number, Array<Variant>>();
   for (const row of rows) {
     const variant: Variant = {
       sha256: row.sha256,
       sizeBytes: row.size_bytes,
-      abis: parseJson<string[]>(row.abis, `release_variants.${row.sha256}.abis`),
+      abis: parseJsonStringArray(
+        row.abis,
+        `release_variants.${row.sha256}.abis`,
+      ),
       minSdk: row.min_sdk,
       targetSdk: row.target_sdk,
       label:
         row.label_i18n === null
           ? null
-          : parseJson<Localized>(
+          : parseJsonLocalized(
               row.label_i18n,
               `release_variants.${row.sha256}.label_i18n`,
             ),
       note:
         row.note_i18n === null
           ? null
-          : parseJson<Localized>(
+          : parseJsonLocalized(
               row.note_i18n,
               `release_variants.${row.sha256}.note_i18n`,
             ),
@@ -607,7 +626,7 @@ function groupVariantsByReleaseId(
 }
 
 function groupAssetsByPackage(
-  rows: readonly AssetRow[],
+  rows: ReadonlyArray<AssetRow>,
 ): Map<string, GroupedAssets> {
   const map = new Map<string, GroupedAssets>();
   const sorted = [...rows].sort((a, b) => a.sort_order - b.sort_order);
@@ -708,7 +727,7 @@ function parseBackdropColors(
   raw: string,
   packageName: string,
 ): [string] | [string, string] {
-  const parsed = parseJson<string[]>(raw, `${packageName}.backdrop_colors`);
+  const parsed = parseJsonStringArray(raw, `${packageName}.backdrop_colors`);
   if (parsed.length === 1) {
     return [parsed[0]];
   }
@@ -742,13 +761,99 @@ function validateRehostMode(value: RehostMode): RehostMode {
   }
 }
 
-function parseJson<T>(raw: string, context: string): T {
+function parseJsonValue(raw: string, context: string): JsonValue {
+  let parsed: unknown;
   try {
-    return JSON.parse(raw) as T;
+    parsed = JSON.parse(raw);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to parse JSON for ${context}: ${message}`);
+    throw new Error(`Failed to parse JSON for ${context}: ${message}`, {
+      cause: error,
+    });
   }
+  if (!isJsonValue(parsed)) {
+    throw new Error(`Invalid JSON value for ${context}.`);
+  }
+  return parsed;
+}
+
+function isJsonValue(value: unknown): value is JsonValue {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every(isJsonValue);
+  }
+  if (typeof value === "object") {
+    return Object.values(value).every(isJsonValue);
+  }
+  return false;
+}
+
+function parseJsonStringArray(raw: string, context: string): Array<string> {
+  const parsed = parseJsonValue(raw, context);
+  if (!isStringArray(parsed)) {
+    throw new Error(`Expected string array JSON for ${context}.`);
+  }
+  return parsed;
+}
+
+function parseJsonLocalized(raw: string, context: string): Localized {
+  const parsed = parseJsonValue(raw, context);
+  if (!isJsonObject(parsed)) {
+    throw new Error(`Expected localized object JSON for ${context}.`);
+  }
+  const enValue = parsed.en;
+  if (typeof enValue !== "string") {
+    throw new Error(`Expected localized string "en" for ${context}.`);
+  }
+  const result: Localized = { en: enValue };
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value !== "string") {
+      throw new Error(`Expected localized string "${key}" for ${context}.`);
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
+function parseJsonLocalizedStringArray(
+  raw: string,
+  context: string,
+): Localized<Array<string>> {
+  const parsed = parseJsonValue(raw, context);
+  if (!isJsonObject(parsed)) {
+    throw new Error(`Expected localized array object JSON for ${context}.`);
+  }
+  const enValue = parsed.en;
+  if (!isStringArray(enValue)) {
+    throw new Error(`Expected localized string array "en" for ${context}.`);
+  }
+  const result: Localized<Array<string>> = { en: enValue };
+  for (const [key, value] of Object.entries(parsed)) {
+    if (!isStringArray(value)) {
+      throw new Error(
+        `Expected localized string array "${key}" for ${context}.`,
+      );
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
+function isJsonObject(value: JsonValue): value is JsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: JsonValue): value is Array<string> {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
 }
 
 function assertNever(value: never): never {

@@ -96,7 +96,10 @@ function resolveStaticTarget(pathname: string): StaticAssetTarget | null {
   const artMatch = ART_PATH_PATTERN.exec(pathname);
   if (artMatch !== null) {
     const filename = artMatch[1];
-    const ext = artMatch[2] as ArtExtension;
+    const ext = parseArtExtension(artMatch[2]);
+    if (ext === null) {
+      return null;
+    }
     return {
       r2Key: `public/art/${filename}`,
       contentType: artContentType(ext),
@@ -105,6 +108,18 @@ function resolveStaticTarget(pathname: string): StaticAssetTarget | null {
   }
 
   return null;
+}
+
+function parseArtExtension(raw: string): ArtExtension | null {
+  switch (raw) {
+    case "webp":
+    case "png":
+    case "jpg":
+    case "jpeg":
+      return raw;
+    default:
+      return null;
+  }
 }
 
 function artContentType(ext: ArtExtension): string {

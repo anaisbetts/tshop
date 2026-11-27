@@ -18,10 +18,14 @@ interface ByteSpan {
   length: number;
 }
 
+export interface WaitUntilContext {
+  waitUntil(promise: Promise<unknown>): void;
+}
+
 export async function handleApkRequest(
   request: Request,
   env: Env,
-  ctx: ExecutionContext,
+  ctx: WaitUntilContext,
 ): Promise<Response> {
   if (request.method === "OPTIONS") {
     return corsPreflightResponse();
@@ -50,7 +54,7 @@ export async function handleApkRequest(
 async function serveApk(
   request: Request,
   env: Env,
-  ctx: ExecutionContext,
+  ctx: WaitUntilContext,
   key: string,
   sha256: string,
   intent: DownloadIntent,
@@ -79,7 +83,9 @@ async function serveApk(
   const pipe = object.body.pipeTo(writable);
 
   if (!ranged) {
-    ctx.waitUntil(pipe.then(() => recordCompletion(env, sha256, intent), ignore));
+    ctx.waitUntil(
+      pipe.then(() => recordCompletion(env, sha256, intent), ignore),
+    );
   } else {
     ctx.waitUntil(pipe.then(undefined, ignore));
   }

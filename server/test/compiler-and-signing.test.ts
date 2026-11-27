@@ -1,14 +1,11 @@
-import { Database } from "bun:sqlite";
-import { describe, expect, it } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import {
-  buildSignedArtifacts,
-  compileCatalog,
-  type CatalogQueryDb,
-  type SqlParam,
-} from "../src/compiler";
+import { DatabaseSync } from "node:sqlite";
+import type { SQLInputValue } from "node:sqlite";
+import { describe, expect, it } from "vite-plus/test";
+import { buildSignedArtifacts, compileCatalog } from "../src/compiler";
+import type { CatalogQueryDb, SqlParam } from "../src/compiler";
 import {
   canonicalPointerBytes,
   derivePublicKeyBase64,
@@ -18,11 +15,11 @@ import {
   sha256Hex,
   signPointer,
   verifyPointer,
-  type UnsignedPointer,
 } from "../src/signing";
+import type { UnsignedPointer } from "../src/signing";
 
 const CATALOG_MIGRATION_PATH = resolve(
-  import.meta.dir,
+  import.meta.dirname,
   "../migrations/catalog/0001_init.sql",
 );
 const CATALOG_SCHEMA_SQL = readFileSync(CATALOG_MIGRATION_PATH, "utf8");
@@ -67,19 +64,28 @@ describe("signing.ts", () => {
       `{"catalogSha256":"${SAMPLE_CATALOG_SHA}","catalogSize":2048,"catalogUrl":"/catalog/catalog-${SAMPLE_CATALOG_SHA}.json","generatedAt":"2026-11-27T23:00:00.000Z","keyId":"tshop-dev-1","minClientVersionCode":1,"schemaVersion":1,"statsUrl":"https://stats.tshop.local/"}`,
     );
 
-    const signed = signPointer(SAMPLE_UNSIGNED_POINTER, DEV_PRIVATE_SEED_BASE64);
+    const signed = signPointer(
+      SAMPLE_UNSIGNED_POINTER,
+      DEV_PRIVATE_SEED_BASE64,
+    );
     expect(canonicalPointerBytes(signed)).toEqual(bytes);
   });
 
   it("round-trips signPointer and verifyPointer cleanly", () => {
-    const signed = signPointer(SAMPLE_UNSIGNED_POINTER, DEV_PRIVATE_SEED_BASE64);
+    const signed = signPointer(
+      SAMPLE_UNSIGNED_POINTER,
+      DEV_PRIVATE_SEED_BASE64,
+    );
     expect(signed.keyId).toBe(DEV_KEY_ID);
     expect(signed.signature.length).toBeGreaterThan(0);
     expect(verifyPointer(signed, DEV_PUBLIC_KEY_BASE64)).toBe(true);
   });
 
   it("rejects tampered fields, wrong public keys, and malformed signatures", () => {
-    const signed = signPointer(SAMPLE_UNSIGNED_POINTER, DEV_PRIVATE_SEED_BASE64);
+    const signed = signPointer(
+      SAMPLE_UNSIGNED_POINTER,
+      DEV_PRIVATE_SEED_BASE64,
+    );
 
     expect(
       verifyPointer(
@@ -105,11 +111,16 @@ describe("signing.ts", () => {
       format: "der",
       type: "spki",
     });
-    const otherPublicBase64 = otherSpki.subarray(otherSpki.byteLength - 32).toString("base64");
+    const otherPublicBase64 = otherSpki
+      .subarray(otherSpki.byteLength - 32)
+      .toString("base64");
     expect(verifyPointer(signed, otherPublicBase64)).toBe(false);
 
     expect(
-      verifyPointer({ ...signed, signature: "not-valid-base64!!!" }, DEV_PUBLIC_KEY_BASE64),
+      verifyPointer(
+        { ...signed, signature: "not-valid-base64!!!" },
+        DEV_PUBLIC_KEY_BASE64,
+      ),
     ).toBe(false);
     expect(verifyPointer(signed, "shortkey")).toBe(false);
   });
@@ -193,7 +204,7 @@ describe("compiler.ts", () => {
         variants: [
           {
             sha256: STABLE_APK_SHA,
-            sizeBytes: 1234567,
+            sizeBytes: 1_234_567,
             abis: [],
             minSdk: 30,
             targetSdk: 34,
@@ -222,7 +233,9 @@ describe("compiler.ts", () => {
       `/catalog/catalog-${artifacts.catalogSha256}.json`,
     );
     expect(artifacts.pointer.catalogSha256).toBe(artifacts.catalogSha256);
-    expect(artifacts.pointer.catalogSize).toBe(artifacts.catalogBytes.byteLength);
+    expect(artifacts.pointer.catalogSize).toBe(
+      artifacts.catalogBytes.byteLength,
+    );
     expect(artifacts.pointer.generatedAt).toBe(generatedAt);
     expect(verifyPointer(artifacts.pointer, DEV_PUBLIC_KEY_BASE64)).toBe(true);
     expect(JSON.parse(artifacts.pointerJson)).toEqual(artifacts.pointer);
@@ -255,7 +268,7 @@ describe("compiler.ts", () => {
     const db = createCatalogDb();
     const now = "2026-11-27T23:00:00Z";
 
-    db.query(
+    db.prepare(
       "INSERT INTO capability_tags (tag, label_i18n, min_client_version_code, created_at) VALUES (?, ?, 1, ?)",
     ).run("vulkan:1.1", JSON.stringify({ en: "Vulkan 1.1" }), now);
 
@@ -329,24 +342,28 @@ describe("compiler.ts", () => {
   });
 });
 
-function createCatalogDb(): Database {
-  const db = new Database(":memory:");
+function createCatalogDb(): DatabaseSync {
+  const db = new DatabaseSync(":memory:");
   db.exec(CATALOG_SCHEMA_SQL);
   return db;
 }
 
-function asQueryDb(db: Database): CatalogQueryDb {
+function asQueryDb(db: DatabaseSync): CatalogQueryDb {
   return {
-    all<T>(sql: string, params: readonly SqlParam[] = []): T[] {
-      const stmt = db.query(sql);
-      return stmt.all(...(params as Parameters<typeof stmt.all>)) as T[];
+    all<T>(sql: string, params: ReadonlyArray<SqlParam> = []): Array<T> {
+      const stmt = db.prepare(sql);
+      const sqlParams: Array<SQLInputValue> = [...params];
+      return stmt.all(...sqlParams).map((row) => ({ ...row }) as T);
     },
   };
 }
 
-function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
+function seedWayfinder(
+  db: DatabaseSync,
+  options: { includeBeta: boolean },
+): void {
   const now = "2026-11-27T23:00:00Z";
-  db.query(
+  db.prepare(
     `INSERT INTO apps (
       package_name, slug, status, rehost_mode, name_i18n, summary_i18n,
       description_i18n, publisher, homepage_url, primary_category, search_tags,
@@ -369,14 +386,14 @@ function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
     now,
   );
 
-  db.query(
+  db.prepare(
     `INSERT INTO app_certs (
       package_name, sha256_fingerprint, label, active, added_reason, added_by, created_at
     ) VALUES ('app.wayfinder', ?, 'GitHub key', 1, 'seed', 'test', ?)`,
   ).run(WAYFINDER_CERT, now);
 
   // Inactive cert must be omitted from allowedSigningCerts.
-  db.query(
+  db.prepare(
     `INSERT INTO app_certs (
       package_name, sha256_fingerprint, label, active, added_reason, added_by, created_at
     ) VALUES ('app.wayfinder', '0000000000000000000000000000000000000000000000000000000000000000', 'Old key', 0, 'rotated', 'test', ?)`,
@@ -385,7 +402,7 @@ function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
   const stableState = options.includeBeta ? "superseded" : "approved";
   const stableId = Number(
     db
-      .query(
+      .prepare(
         `INSERT INTO releases (
           package_name, version_code, version_name, released_at, changelog_i18n,
           state, variants_are_user_choice, validation_report, created_at
@@ -395,7 +412,7 @@ function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
       .lastInsertRowid,
   );
 
-  db.query(
+  db.prepare(
     `INSERT INTO release_variants (
       release_id, sha256, size_bytes, abis, min_sdk, target_sdk, upstream_url, r2_key, r2_present
     ) VALUES (?, ?, 1234567, '[]', 30, 34, 'https://github.com/Thor-Wayfinder/thor-wayfinder/releases/download/v1.4.1/wayfinder-1.4.1.apk', ?, 1)`,
@@ -407,7 +424,7 @@ function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
   if (options.includeBeta) {
     const betaId = Number(
       db
-        .query(
+        .prepare(
           `INSERT INTO releases (
             package_name, version_code, version_name, released_at, changelog_i18n,
             state, variants_are_user_choice, validation_report, created_at
@@ -419,7 +436,7 @@ function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
         ).lastInsertRowid,
     );
 
-    db.query(
+    db.prepare(
       `INSERT INTO release_variants (
         release_id, sha256, size_bytes, abis, min_sdk, target_sdk, upstream_url, r2_key, r2_present
       ) VALUES (?, ?, 1456789, '[]', 30, 34, 'https://github.com/Thor-Wayfinder/thor-wayfinder/releases/download/v1.5-beta2/wayfinder-1.5-beta2.apk', ?, 1)`,
@@ -429,12 +446,12 @@ function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
     previousId = stableId;
   }
 
-  db.query(
+  db.prepare(
     "UPDATE apps SET approved_release_id = ?, previous_release_id = ? WHERE package_name = 'app.wayfinder'",
   ).run(approvedId, previousId);
 
   // Verify both <sha>.<ext> and bare <sha> (implying .webp) plus sort_order ordering.
-  const insertAsset = db.query(
+  const insertAsset = db.prepare(
     `INSERT INTO app_assets (
       package_name, kind, sort_order, raw_r2_key, webp_sha256, thumb_webp_sha256,
       width, height, source_url, rights_basis, created_at
@@ -455,7 +472,7 @@ function seedWayfinder(db: Database, options: { includeBeta: boolean }): void {
 }
 
 function insertMinimalApp(
-  db: Database,
+  db: DatabaseSync,
   spec: {
     packageName: string;
     slug: string;
@@ -467,7 +484,7 @@ function insertMinimalApp(
   },
 ): void {
   const now = "2026-11-27T23:00:00Z";
-  db.query(
+  db.prepare(
     `INSERT INTO apps (
       package_name, slug, status, rehost_mode, landing_reason_i18n, landing_url,
       name_i18n, summary_i18n, description_i18n, publisher, homepage_url,
@@ -494,7 +511,7 @@ function insertMinimalApp(
     now,
   );
 
-  db.query(
+  db.prepare(
     `INSERT INTO app_assets (
       package_name, kind, sort_order, raw_r2_key, webp_sha256, thumb_webp_sha256,
       width, height, source_url, rights_basis, created_at

@@ -1,0 +1,42 @@
+import { defineConfig } from "void/config";
+
+export default defineConfig({
+  target: "cloudflare",
+  worker: {
+    compatibility_date: "2026-04-01",
+    compatibility_flags: ["nodejs_compat"],
+  },
+  routing: {
+    notFound: "none",
+  },
+  cloudflare: {
+    name: "tshop-dev-server",
+    observability: {
+      enabled: true,
+    },
+    d1_databases: [
+      {
+        binding: "CATALOG_DB",
+        database_name: "tshop-catalog",
+        database_id: "CATALOG_DB",
+        migrations_dir: "migrations/catalog",
+      },
+      {
+        binding: "ANALYTICS_DB",
+        database_name: "tshop-analytics",
+        database_id: "ANALYTICS_DB",
+        migrations_dir: "migrations/analytics",
+      },
+    ],
+    r2_buckets: [
+      {
+        binding: "APKS_BUCKET",
+        bucket_name: "tshop-apks",
+      },
+      {
+        binding: "ASSETS_BUCKET",
+        bucket_name: "tshop-assets",
+      },
+    ],
+  },
+});

@@ -3,29 +3,32 @@
   "name": "tshop-dev-server",
   "main": "src/index.ts",
   "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "d1_databases": [
     {
       "binding": "CATALOG_DB",
       "database_name": "tshop-catalog",
-      "migrations_dir": "migrations/catalog"
+      "database_id": "CATALOG_DB",
+      "migrations_dir": "migrations/catalog",
     },
     {
       "binding": "ANALYTICS_DB",
       "database_name": "tshop-analytics",
-      "migrations_dir": "migrations/analytics"
-    }
+      "database_id": "ANALYTICS_DB",
+      "migrations_dir": "migrations/analytics",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "APKS_BUCKET",
-      "bucket_name": "tshop-apks"
+      "bucket_name": "tshop-apks",
     },
     {
       "binding": "ASSETS_BUCKET",
-      "bucket_name": "tshop-assets"
-    }
-  ]
+      "bucket_name": "tshop-assets",
+    },
+  ],
 }

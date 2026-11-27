@@ -1,14 +1,16 @@
-import { Database } from "bun:sqlite";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import type { SQLInputValue } from "node:sqlite";
 import type { Env } from "../src/types";
 
 const ANALYTICS_MIGRATION_PATH = resolve(
-  import.meta.dir,
+  import.meta.dirname,
   "../migrations/analytics/0001_completions.sql",
 );
 const CATALOG_MIGRATION_PATH = resolve(
-  import.meta.dir,
+  import.meta.dirname,
   "../migrations/catalog/0001_init.sql",
 );
 const SINGLE_RANGE_PATTERN = /^bytes=(\d*)-(\d*)$/;
@@ -36,6 +38,10 @@ export interface TestHarness {
   catalogDb: MockD1Database;
 }
 
+interface GlobalWithFixedLengthStream {
+  FixedLengthStream?: typeof PolyfillFixedLengthStream;
+}
+
 export function createTestHarness(): TestHarness {
   installFixedLengthStreamPolyfill();
 
@@ -50,10 +56,10 @@ export function createTestHarness(): TestHarness {
   const ctx = new MockExecutionContext();
 
   const env: Env = {
-    CATALOG_DB: catalogDb as unknown as D1Database,
-    ANALYTICS_DB: analyticsDb as unknown as D1Database,
-    APKS_BUCKET: apksBucket as unknown as R2Bucket,
-    ASSETS_BUCKET: assetsBucket as unknown as R2Bucket,
+    CATALOG_DB: asD1Database(catalogDb),
+    ANALYTICS_DB: asD1Database(analyticsDb),
+    APKS_BUCKET: asR2Bucket(apksBucket),
+    ASSETS_BUCKET: asR2Bucket(assetsBucket),
   };
 
   return { env, ctx, apksBucket, assetsBucket, analyticsDb, catalogDb };
@@ -89,10 +95,7 @@ export class MockR2Bucket {
     return buildR2Object(key, entry, undefined);
   }
 
-  async get(
-    key: string,
-    options?: R2GetOptions,
-  ): Promise<R2ObjectBody | null> {
+  async get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | null> {
     const entry = this.store.get(key);
     if (!entry) {
       return null;
@@ -100,39 +103,15 @@ export class MockR2Bucket {
 
     const range = extractRange(options?.range, entry.body.byteLength);
     const slice = sliceForRange(entry.body, range);
-    const base = buildR2Object(key, entry, range);
-
-    return {
-      ...base,
-      body: createByteStream(slice),
-      bodyUsed: false,
-      async arrayBuffer(): Promise<ArrayBuffer> {
-        return slice.buffer.slice(
-          slice.byteOffset,
-          slice.byteOffset + slice.byteLength,
-        );
-      },
-      async bytes(): Promise<Uint8Array> {
-        return slice;
-      },
-      async text(): Promise<string> {
-        return new TextDecoder().decode(slice);
-      },
-      async json<T>(): Promise<T> {
-        return JSON.parse(new TextDecoder().decode(slice)) as T;
-      },
-      async blob(): Promise<Blob> {
-        return new Blob([slice]);
-      },
-    } as unknown as R2ObjectBody;
+    return buildR2ObjectBody(key, entry, range, slice);
   }
 }
 
 export class MockD1Database {
-  private readonly db: Database;
+  private readonly db: DatabaseSync;
 
   constructor(schemaSql?: string) {
-    this.db = new Database(":memory:");
+    this.db = new DatabaseSync(":memory:");
     if (schemaSql) {
       this.db.exec(schemaSql);
     }
@@ -142,23 +121,33 @@ export class MockD1Database {
     return new MockD1PreparedStatement(this.db, query);
   }
 
-  queryCompletions(): CompletionRow[] {
-    return this.db
-      .query(
+  queryCompletions(): Array<CompletionRow> {
+    const rows = this.db
+      .prepare(
         "SELECT sha256, utc_day, intent, n FROM completions ORDER BY sha256, utc_day, intent",
       )
-      .all() as CompletionRow[];
+      .all();
+    return rows.map((row) => ({
+      sha256: String(row.sha256),
+      utc_day: String(row.utc_day),
+      intent: String(row.intent),
+      n: Number(row.n),
+    }));
   }
 }
 
 export class MockExecutionContext {
-  private readonly pending: Promise<unknown>[] = [];
+  private readonly pending: Array<Promise<unknown>> = [];
 
   waitUntil(promise: Promise<unknown>): void {
     this.pending.push(promise);
   }
 
   passThroughOnException(): void {}
+
+  asExecutionContext(): ExecutionContext {
+    return this as unknown as ExecutionContext;
+  }
 
   async flush(): Promise<void> {
     await Promise.all(this.pending);
@@ -167,21 +156,21 @@ export class MockExecutionContext {
 }
 
 class MockD1PreparedStatement {
-  private params: unknown[] = [];
+  private params: Array<SQLInputValue> = [];
 
   constructor(
-    private readonly db: Database,
+    private readonly db: DatabaseSync,
     private readonly sql: string,
   ) {}
 
-  bind(...values: unknown[]): this {
+  bind(...values: Array<SQLInputValue>): this {
     this.params = values;
     return this;
   }
 
   async run(): Promise<D1Result> {
-    const stmt = this.db.query(this.sql);
-    stmt.run(...(this.params as Parameters<typeof stmt.run>));
+    const stmt = this.db.prepare(this.sql);
+    stmt.run(...this.params);
     return {
       success: true,
       results: [],
@@ -197,11 +186,9 @@ class MockD1PreparedStatement {
     };
   }
 
-  async all<T = Record<string, unknown>>(): Promise<D1Result<T>> {
-    const stmt = this.db.query(this.sql);
-    const results = stmt.all(
-      ...(this.params as Parameters<typeof stmt.all>),
-    ) as T[];
+  async all<T = Record<string, SQLInputValue>>(): Promise<D1Result<T>> {
+    const stmt = this.db.prepare(this.sql);
+    const results = stmt.all(...this.params).map((row) => ({ ...row }) as T);
     return {
       success: true,
       results,
@@ -251,7 +238,8 @@ class PolyfillFixedLengthStream extends TransformStream<
 }
 
 function installFixedLengthStreamPolyfill(): void {
-  if (typeof globalThis.FixedLengthStream === "undefined") {
+  const globalObj = globalThis as unknown as GlobalWithFixedLengthStream;
+  if (globalObj.FixedLengthStream === undefined) {
     Object.defineProperty(globalThis, "FixedLengthStream", {
       value: PolyfillFixedLengthStream,
       configurable: true,
@@ -260,12 +248,20 @@ function installFixedLengthStreamPolyfill(): void {
   }
 }
 
+function asD1Database(db: MockD1Database): D1Database {
+  return db as unknown as D1Database;
+}
+
+function asR2Bucket(bucket: MockR2Bucket): R2Bucket {
+  return bucket as unknown as R2Bucket;
+}
+
 function buildR2Object(
   key: string,
   entry: StoredR2Entry,
   range: R2Range | undefined,
 ): R2Object {
-  return {
+  const object: Partial<R2Object> = {
     key,
     version: "1",
     size: entry.body.byteLength,
@@ -285,7 +281,51 @@ function buildR2Object(
         headers.set("Cache-Control", entry.httpMetadata.cacheControl);
       }
     },
-  } as unknown as R2Object;
+  };
+  return object as R2Object;
+}
+
+function buildR2ObjectBody(
+  key: string,
+  entry: StoredR2Entry,
+  range: R2Range | undefined,
+  slice: Uint8Array,
+): R2ObjectBody {
+  const base = buildR2Object(key, entry, range);
+  const bodyObj: Partial<R2ObjectBody> = {
+    key: base.key,
+    version: base.version,
+    size: base.size,
+    etag: base.etag,
+    httpEtag: base.httpEtag,
+    checksums: base.checksums,
+    uploaded: base.uploaded,
+    httpMetadata: base.httpMetadata,
+    customMetadata: base.customMetadata,
+    range: base.range,
+    storageClass: base.storageClass,
+    writeHttpMetadata: (headers: Headers) => base.writeHttpMetadata(headers),
+    body: createByteStream(slice),
+    bodyUsed: false,
+    async arrayBuffer(): Promise<ArrayBuffer> {
+      const copy = new Uint8Array(slice.byteLength);
+      copy.set(slice);
+      return copy.buffer;
+    },
+    async bytes(): Promise<Uint8Array> {
+      return slice;
+    },
+    async text(): Promise<string> {
+      return new TextDecoder().decode(slice);
+    },
+    async json<T>(): Promise<T> {
+      return JSON.parse(new TextDecoder().decode(slice)) as T;
+    },
+    async blob(): Promise<Blob> {
+      return new Blob([slice]);
+    },
+  };
+  return bodyObj as R2ObjectBody;
 }
 
 function extractRange(
@@ -295,7 +335,7 @@ function extractRange(
   if (!rangeOption) {
     return undefined;
   }
-  if (!(rangeOption instanceof Headers)) {
+  if (!isHeaders(rangeOption)) {
     return rangeOption;
   }
   const header = rangeOption.get("Range");
@@ -319,6 +359,10 @@ function extractRange(
   return { offset: start, length: Math.max(0, end - start + 1) };
 }
 
+function isHeaders(value: R2Range | Headers): value is Headers {
+  return "get" in value && typeof value.get === "function";
+}
+
 function sliceForRange(
   body: Uint8Array,
   range: R2Range | undefined,
@@ -326,7 +370,7 @@ function sliceForRange(
   if (!range) {
     return body;
   }
-  if ("suffix" in range && typeof range.suffix === "number") {
+  if (isSuffixRange(range)) {
     const length = Math.min(range.suffix, body.byteLength);
     return body.subarray(body.byteLength - length);
   }
@@ -335,6 +379,10 @@ function sliceForRange(
   const length =
     range.length === undefined ? remaining : Math.min(range.length, remaining);
   return body.subarray(start, start + length);
+}
+
+function isSuffixRange(range: R2Range): range is { suffix: number } {
+  return "suffix" in range && typeof range.suffix === "number";
 }
 
 function createByteStream(bytes: Uint8Array): ReadableStream<Uint8Array> {
@@ -349,7 +397,5 @@ function createByteStream(bytes: Uint8Array): ReadableStream<Uint8Array> {
 }
 
 function computeEtag(bytes: Uint8Array): string {
-  const hasher = new Bun.CryptoHasher("sha256");
-  hasher.update(bytes);
-  return hasher.digest("hex").slice(0, 32);
+  return createHash("sha256").update(bytes).digest("hex").slice(0, 32);
 }

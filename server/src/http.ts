@@ -25,9 +25,7 @@ export function jsonResponse(
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-export function methodNotAllowedResponse(
-  allow = CORS_ALLOW_METHODS,
-): Response {
+export function methodNotAllowedResponse(allow = CORS_ALLOW_METHODS): Response {
   return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: allow });
 }
 
