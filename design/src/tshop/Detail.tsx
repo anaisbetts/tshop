@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
 
-import { DETAIL_ART, libraryCount, type Entry, type Variant } from './catalog.ts'
+import { DETAIL_ART, libraryCount, type DetailArt, type Entry, type Variant } from './catalog.ts'
 import { Legend, Pad, Screen, TopBar, type Canvas, type Mode } from './Chrome.tsx'
 import { PrimaryAction } from './PrimaryAction.tsx'
 
@@ -9,6 +9,8 @@ export type DetailFocus = 'action' | number
 
 export type DetailProps = {
   entry: Entry
+  /** Feature, screenshots, description, changelog. Defaults to the sample art for `entry.id`. */
+  art?: DetailArt
   canvas?: Canvas
   mode?: Mode
   online?: boolean
@@ -22,6 +24,7 @@ export type DetailProps = {
 /** Where tShop spends screen space on artwork. Scrolls vertically; this is the first fold. */
 export function Detail({
   entry,
+  art = DETAIL_ART[entry.id],
   canvas = 'thor',
   mode = 'day',
   online = true,
@@ -30,7 +33,6 @@ export function Detail({
   onBack,
   onShot,
 }: DetailProps) {
-  const art = DETAIL_ART[entry.id]
   const shotCount = art?.shots.length ?? 0
   const [focus, setFocus] = useState<DetailFocus>(initialFocus)
   const [picking, setPicking] = useState(choosingVariant && Boolean(entry.variants))

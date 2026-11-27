@@ -94,8 +94,8 @@ export function PolicyCard() {
         <div>
           <p className="ts-policy__head">Kept, per day</p>
           <ul>
-            <li>App and version fetched</li>
-            <li>APK variant, if there is a choice</li>
+            <li>App, version and APK variant fetched</li>
+            <li>Whether it was an install or an update</li>
             <li>UTC day and a count</li>
           </ul>
         </div>

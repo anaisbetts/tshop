@@ -117,7 +117,9 @@ for the store. Static `catalog.json` is strictly a compiled, signed output of
 
 All localizable text columns store a JSON object keyed by BCP-47 language tag
 with `"en"` required as the fallback (e.g., `{"en": "..."}`), matching
-[02-screens.md](02-screens.md).
+[02-screens.md](02-screens.md). Multi-paragraph and bulleted fields store an
+array of plain-text strings per language (e.g., `{"en": ["First paragraph.",
+"Second paragraph."]}`) so the client never parses markup.
 
 #### `apps`
 
@@ -129,26 +131,27 @@ One row per curated catalog entry.
 | `slug` | `TEXT NOT NULL UNIQUE` | URL-safe identifier (e.g., `dolphin`). |
 | `status` | `TEXT NOT NULL` | `draft` \| `published` \| `delisted`. New apps always start `draft`. |
 | `rehost_mode` | `TEXT NOT NULL` | `rehost` \| `landing`. Per-app licensing/policy flag from [03-hosting-and-bandwidth.md](03-hosting-and-bandwidth.md). |
-| `landing_reason_i18n` | `TEXT` | JSON map; required when `rehost_mode = 'landing'`. |
+| `landing_reason_i18n` | `TEXT` | JSON map; required when `rehost_mode = 'landing'`. Shown under **Go to Publisher**. |
+| `landing_url` | `TEXT` | Publisher's download page opened by **Go to Publisher**; required when `rehost_mode = 'landing'`. Distinct from `homepage_url`, which backs the Detail **Upstream page** action. |
 | `name_i18n` | `TEXT NOT NULL` | Display name. |
 | `summary_i18n` | `TEXT NOT NULL` | Concise one-line Browse/Detail summary. |
-| `description_i18n` | `TEXT NOT NULL` | Full Detail description (paragraphs). |
+| `description_i18n` | `TEXT NOT NULL` | Full Detail description; JSON map of paragraph arrays. |
 | `compat_notes_i18n` | `TEXT` | Optional handheld setup / compatibility notes. |
 | `publisher` | `TEXT NOT NULL` | Upstream author or project name. |
 | `homepage_url` | `TEXT NOT NULL` | Upstream project URL (distinct from download source). |
 | `primary_category` | `TEXT NOT NULL` | Exactly one: `Emulators` \| `Frontends` \| `Games` \| `Utilities`. |
 | `search_tags` | `TEXT NOT NULL` | JSON string array; search match material only (resolves [99-spec-critique.md](99-spec-critique.md) §11). |
-| `capabilities` | `TEXT NOT NULL` | JSON array of closed-vocabulary capability tags (e.g., `gpu:adreno`). Pipeline rejects unknown tags. |
+| `capabilities` | `TEXT NOT NULL` | JSON array of required capability tags (e.g., `["vulkan:1.1"]`). Every tag must exist in `capability_tags`; the pipeline rejects unknown tags. |
 | `backdrop_colors` | `TEXT NOT NULL` | JSON array of 1–2 hex colors for in-app tile gradient compositing. |
 | `backdrop_angle` | `REAL NOT NULL` | Gradient angle in degrees (default `160`). |
 | `icon_scale` | `REAL NOT NULL` | Scale factor for in-app [`TshopTile`](../client/lib/src/theme/widgets/tshop_tile.dart) compositing (`>1` crops rounded corners). |
-| `seed_rank` | `INTEGER NOT NULL` | Curator-assigned rank for cold-start and Landing Page ordering. |
-| `editorial_pin` | `INTEGER` | Optional explicit position override within its category. |
-| `source_type` | `TEXT NOT NULL` | `github_release` \| `json_feed` \| `html_links` \| `direct_url` \| `custom` \| `none`. |
+| `seed_rank` | `INTEGER NOT NULL` | Curator-assigned position in the global popularity order (1 = top) used for cold-start and Landing Page entries. See [Popularity ranking](#popularity-ranking-formula). |
+| `editorial_pin` | `INTEGER` | Optional explicit 1-based position override within its category frame. Never affects the global order or the stats page. |
+| `source_type` | `TEXT NOT NULL` | `github_release` \| `json_feed` \| `html_links` \| `direct_url` \| `custom` \| `none`. Landing Page apps may use any adapter in metadata-only mode (see [Landing Page releases](#landing-page-releases)). |
 | `source_config` | `TEXT NOT NULL` | Typed declarative JSON for the chosen adapter. Never executable code. |
 | `license_spdx` | `TEXT NOT NULL` | SPDX identifier or `"Proprietary"` / `"Custom"`. |
 | `license_notes` | `TEXT` | Redistribution notes checked at curation time. |
-| `approved_release_id` | `INTEGER` | FK → `releases.id`. Currently published release (`NULL` for `draft` or `landing`). |
+| `approved_release_id` | `INTEGER` | FK → `releases.id`. Currently published release (`NULL` for `draft`). For `landing` apps it points to a metadata-only release, or is `NULL` when no release info is known. |
 | `previous_release_id` | `INTEGER` | FK → `releases.id`. N-1 approved release retained in R2 for instant rollback. |
 | `created_at` | `TEXT NOT NULL` | ISO-8601 UTC timestamp. |
 | `updated_at` | `TEXT NOT NULL` | ISO-8601 UTC timestamp. |
@@ -173,6 +176,26 @@ expected cert cannot represent legitimate key rotations or dual-signed builds).
 | `revoked_at` | `TEXT` | Nullable. |
 | `revoked_reason` | `TEXT` | Mandatory when revoked. |
 
+#### `capability_tags`
+
+The closed capability vocabulary from [02-screens.md](02-screens.md). Version
+one starts empty; a tag is added only when a catalog entry cannot usefully run
+without that hardware. Optional enhancements go in `compat_notes_i18n`, never
+here.
+
+| Column | Type | Notes |
+|---|---|---|
+| `tag` | `TEXT PRIMARY KEY` | Stable machine ID (e.g., `vulkan:1.1`). |
+| `label_i18n` | `TEXT NOT NULL` | Short display label for Browse's "Needs …" chip and Detail's met/unmet list (e.g., `{"en": "Vulkan 1.1 GPU driver"}`). |
+| `min_client_version_code` | `INTEGER NOT NULL` | First tShop client build that can detect this tag on-device. |
+| `created_at` | `TEXT NOT NULL` | |
+
+Labels ship in the catalog so wording fixes and translations need no client
+release. Detection logic ships in the client, so a publish invariant requires
+every tag used by a published entry to have `min_client_version_code <=` the
+published `minClientVersionCode`. Every client allowed to read a catalog can
+therefore evaluate every tag in it. Adding a tag means raising the client floor.
+
 #### `releases`
 
 Retained indefinitely in D1 so historical analytics stay joinable to version
@@ -183,10 +206,10 @@ changelogs can be emitted.
 |---|---|---|
 | `id` | `INTEGER PRIMARY KEY` | |
 | `package_name` | `TEXT NOT NULL` | FK → `apps.package_name`. |
-| `version_code` | `INTEGER NOT NULL` | Authoritative Android `versionCode` (decides update order). |
+| `version_code` | `INTEGER` | Authoritative Android `versionCode` (decides update order). `NULL` only for metadata-only Landing Page releases. |
 | `version_name` | `TEXT NOT NULL` | Display string only. |
 | `released_at` | `TEXT NOT NULL` | Upstream release date (ISO-8601 UTC). |
-| `changelog_i18n` | `TEXT` | Sanitized plain-text/bullet changelog JSON map. |
+| `changelog_i18n` | `TEXT` | Sanitized changelog; JSON map of plain-text bullet arrays. |
 | `state` | `TEXT NOT NULL` | `candidate` \| `approved` \| `quarantined` \| `superseded` \| `rejected` \| `rolled_back`. |
 | `variants_are_user_choice` | `INTEGER NOT NULL` | `1` when the client should show a variant picker (e.g., Vulkan vs GLES). |
 | `validation_report` | `TEXT NOT NULL` | JSON output of all 11 validation gates, manifest lint, permission diff, and 16 KB alignment note. |
@@ -251,12 +274,8 @@ EXIF, resizes, and transcodes uploads to WebP.
   `r2_key`, `is_current`, `min_supported_version_code`): powers tShop
   self-updates (silent on Android 12+ as self-installer) and `pointer.json`'s
   `minClientVersionCode` floor (resolves
-  [99-spec-critique.md](99-spec-critique.md) §21).
-- **`announcements`** (`id`, `severity`, `body_i18n`,
-  `min_client_version_code`, `max_client_version_code`, `ack_required`,
-  `expires_at`, `active`, `created_at`): lightweight optional catalog messages
-  (empty until needed; follows the guardrails in
-  [04-oppo-research-lessons.md](04-oppo-research-lessons.md)).
+  [99-spec-critique.md](99-spec-critique.md) §21). See
+  [tShop self-update](#tshop-self-update) for how the client shows it.
 - **`jobs`** (`id`, `kind`, `target_package`, `status`, `boat_sandbox_id`,
   `token_hash`, `token_expires_at`, `payload_json`, `result_json`,
   `created_by`, `created_at`, `finished_at`): tracks every `boat.dev` dispatch
@@ -295,9 +314,18 @@ EXIF, resizes, and transcodes uploads to WebP.
 
 ## Published static storefront & signing
 
-All client-facing catalog, artwork, and stats files are served from
-**Cloudflare Pages** (`catalog.tshop...` / `stats.tshop...`), backed by a
-durable copy of processed assets in `tshop-assets` R2.
+All client-facing catalog, artwork, and stats files are served from one
+**Cloudflare Pages** project, backed by a durable copy of processed assets in
+`tshop-assets` R2. The project has two custom domains: `catalog.tshop...` (what
+the client fetches) and `stats.tshop...` (a human-friendly hostname whose `/`
+rewrites to `/stats/index.html` via `_redirects`).
+
+The deploy includes a `_headers` file that sets
+`Access-Control-Allow-Origin: *` on `/pointer.json`, `/catalog/*`, `/art/*`, and
+`/stats/stats.json`. Everything there is public and sent without credentials,
+so a wildcard is safe. It lets the Flutter web demo (see
+[02-screens.md](02-screens.md) "Web demo") render real catalog data from any
+origin. The download Worker needs no CORS because the web demo stubs installs.
 
 Why Pages instead of a public R2 bucket:
 - **Zero Class B request meter:** Even under a cache-busting `?rand=...` flood
@@ -321,11 +349,13 @@ signing boat signs a small `pointer.json` rather than the full catalog body:
   "catalogUrl": "/catalog/catalog-7f8a...c2.json",
   "catalogSha256": "7f8a...c2",
   "catalogSize": 184320,
-  "statsUrl": "/stats/index.html",
+  "statsUrl": "https://stats.tshop.../",
   "signature": "<base64-ed25519-sig-over-canonical-fields>"
 }
 ```
 
+- **URLs:** `catalogUrl` is resolved relative to `pointer.json`. `statsUrl` is
+  absolute because About opens it in the external browser.
 - **Caching:** `pointer.json` is served with short cache (`max-age=60`,
   `ETag`/`304` on conditional GET). `catalog-<sha256>.json` and all WebP art
   under `/art/<sha256>.webp` are immutable (`max-age=31536000, immutable`).
@@ -342,22 +372,150 @@ signing boat signs a small `pointer.json` rather than the full catalog body:
 Compiled deterministically from `tshop-catalog` + `tshop-analytics`. The client
 **never sorts**—categories and entries appear in their exact rendered order.
 
-- Top-level: `schemaVersion`, `generatedAt`, `apkBaseUrl` (normally
-  `https://dl.tshop.../apk`, flippable to `https://cdn.tshop...` during an
-  emergency flood), `client` (current tShop self-update release),
-  `announcements` (active, non-expired entries), `categories` (ordered list),
-  `entries` (ordered per category).
-- Per entry: `packageName`, `slug`, `name`, `publisher`, `category`,
-  `searchTags`, `summary`, `description`, `compatNotes`, `homepageUrl`,
-  `rehostMode`, `landingReason`, `allowedSigningCerts` (active SHA-256 list),
-  `capabilities`, `tile: { iconUrl, backdropColors, backdropAngle, iconScale }`,
-  `featureUrl`, `screenshots: [{ thumbUrl, fullUrl, width, height }]`,
-  `release` (latest approved: `versionCode`, `versionName`, `releasedAt`,
-  `variantsAreUserChoice`, `variants: [{ sha256, sizeBytes, abis, minSdk,
-  targetSdk, label, note, tshopUrl, upstreamUrl }]`), and `changelogs` (the
-  **last 5 approved releases** `[{ versionCode, versionName, releasedAt,
-  notes }]` so the client can render "changes since your installed version",
-  resolving [99-spec-critique.md](99-spec-critique.md) §17).
+The TypeScript type below is the source of truth. The JSON Schema used by the
+publish invariants is generated from it and checked into the repo. The Flutter
+client's model classes must match it.
+
+```ts
+/** `en` is required; other keys are BCP-47 tags. */
+type Localized<T = string> = { en: T } & Record<string, T>
+
+type Catalog = {
+  schemaVersion: 1
+  /** ISO-8601 UTC. Shown as the catalog date in Settings and About. */
+  generatedAt: string
+  /** Normally `https://dl.tshop.../apk`; flipped to `https://cdn.tshop...` by the degrade lever. */
+  apkBaseUrl: string
+  /** Current tShop build, for self-update. */
+  client: ClientRelease
+  /** Labels for every tag used by any entry. */
+  capabilityTags: { tag: string; label: Localized }[]
+  /** Browse frames in fixed curator order; empty categories are omitted. */
+  categories: CategoryFrame[]
+  /** Every published entry, in global popularity order (rank 1 first). */
+  entries: Entry[]
+}
+
+type CategoryId = 'Emulators' | 'Frontends' | 'Games' | 'Utilities'
+
+type CategoryFrame = {
+  id: CategoryId
+  name: Localized
+  /** Package names in frame order: global order filtered to this category, then editorial pins applied. */
+  entries: string[]
+}
+
+type Entry = {
+  packageName: string
+  slug: string
+  /** 1-based position in the global popularity order. */
+  rank: number
+  name: Localized
+  publisher: string
+  category: CategoryId
+  /** Matched by on-device search together with name, summary, and description. */
+  searchTags: string[]
+  summary: Localized
+  /** Paragraphs. */
+  description: Localized<string[]>
+  compatNotes: Localized<string[]> | null
+  /** Detail's Upstream page action. */
+  homepageUrl: string
+  rehostMode: 'rehost' | 'landing'
+  /** Set if and only if `rehostMode === 'landing'`. */
+  landing: { reason: Localized; url: string } | null
+  /** Active publisher cert SHA-256 fingerprints; empty for landing entries. */
+  allowedSigningCerts: string[]
+  /** Tags from `capabilityTags`. */
+  capabilities: string[]
+  /** Composited live by the client; never pre-baked. */
+  tile: {
+    iconUrl: string
+    backdropColors: [string] | [string, string]
+    backdropAngle: number
+    iconScale: number
+  }
+  /** Null makes Detail fall back to the tile backdrop wash. */
+  featureUrl: string | null
+  screenshots: { thumbUrl: string; fullUrl: string; width: number; height: number }[]
+  /** Latest approved release. Null only for landing entries with no known release. */
+  release: Release | null
+  /** Up to the last 5 approved releases, newest first; `changelogs[0]` is `release`. */
+  changelogs: Changelog[]
+}
+
+type Release = {
+  /** Null only for metadata-only Landing Page releases. */
+  versionCode: number | null
+  versionName: string
+  releasedAt: string
+  variantsAreUserChoice: boolean
+  /** Empty for landing entries. */
+  variants: Variant[]
+}
+
+type Variant = {
+  sha256: string
+  sizeBytes: number
+  abis: string[]
+  minSdk: number
+  targetSdk: number
+  /** Present when `variantsAreUserChoice`; shown in the variant dialog. */
+  label: Localized | null
+  note: Localized | null
+  /** Used instead of the tShop URL when Privacy Mode is on. */
+  upstreamUrl: string
+}
+
+type Changelog = {
+  versionCode: number | null
+  versionName: string
+  releasedAt: string
+  /** Bullets. */
+  notes: Localized<string[]>
+}
+
+type ClientRelease = {
+  versionCode: number
+  versionName: string
+  releasedAt: string
+  notes: Localized<string[]>
+  sha256: string
+  sizeBytes: number
+  minSdk: number
+  upstreamUrl: string
+}
+```
+
+- **tShop download URL:** Never stored per variant. The client builds it as
+  `${apkBaseUrl}/${sha256}.apk?r=install|update`, so the degrade lever only
+  has to change one field.
+- **Changelogs:** The last 5 releases let the client render "changes since
+  your installed version" (resolving
+  [99-spec-critique.md](99-spec-critique.md) §17).
+
+### Seed catalog bundled into client builds
+
+Onboarding's welcome screen shows real catalog tiles before tShop has ever
+reached the network. The client build pipeline therefore fetches the current
+`pointer.json`, its `catalog-<sha256>.json`, and the icon WebPs of the top
+**9 entries by `rank`** from Pages. It verifies the signature and bundles them
+as app assets. On first launch the seed is treated as the last verified
+catalog: it fills the welcome screen and Browse until the first online refresh
+replaces it. Its `generatedAt` is the anti-downgrade baseline. No server
+change is needed beyond the files already published.
+
+### tShop self-update
+
+The catalog's `client` block is the only self-update channel. No screen is
+added for it:
+
+- When `client.versionCode` is newer than the running build, the client shows
+  tShop as one extra tile at the front of Library's **Updates available**
+  frame and includes it in **Update All**. It never appears in Browse.
+- When the running build is below `pointer.json`'s `minClientVersionCode`, the
+  client keeps showing its last verified catalog as if offline. Library's
+  tShop tile explains that this update is required to load newer catalogs.
 
 ### Signing boat (`tshop-signer`) publish flow
 
@@ -377,6 +535,10 @@ heartbeat + D1 backup), (b) auto-promotion of a clean update, or (c) manual
      the last `publish_history` row unless an explicit operator override flag
      is set (prevents empty/truncated publishes).
    - `generatedAt` is strictly greater than the previous published timestamp.
+   - Every capability tag used by a published entry exists in
+     `capabilityTags` with `min_client_version_code <= minClientVersionCode`.
+   - Every landing entry has `landing.url`. Every rehost entry has at least
+     one variant and at least one active signing cert.
 3. Signs `pointer.json` with the Ed25519 private key held exclusively in
    `tshop-signer`.
 4. Deploys to Cloudflare Pages (`wrangler pages deploy`, atomic cutover).
@@ -410,9 +572,10 @@ identity, stays 100% visible on the public stats page, and solves
 [99-spec-critique.md](99-spec-critique.md) §6: an emulator that releases four
 times a month no longer outranks a rock-solid app purely on update churn.
 
-User-reported broken installs are **not** telemetry: Detail / failed queue
-items provide an explicit external link to a pre-filled issue form (package +
-version) if a user chooses to report a problem.
+User-reported broken installs are **not** telemetry. A user who wants to report
+a problem uses **Settings › About › Support**, which opens the project's issue
+tracker in the external browser. That URL is baked into the client, not the
+catalog.
 
 ### Analytics storage (`tshop-analytics` D1)
 
@@ -448,14 +611,28 @@ CREATE TABLE IF NOT EXISTS completions (
 Generated statically once per day by the publish job onto Cloudflare Pages
 (`/stats/index.html` and `/stats/stats.json`):
 
-- Displays **rolling 7-day** and **all-time** totals per app (matching
-  [Stats.tsx](../design/src/tshop/Stats.tsx)), broken out into `installs` and
-  `updates`, plus **weekly** per-version/variant historical series in
-  `stats.json`.
-- **Low-volume suppression (k-anonymity):** Any individual published bucket
-  with `1 <= n < 5` is displayed/emitted as `"<5"` (never an exact small daily
-  integer) so long-tail entries cannot be read as near-real-time user activity
-  ([99-spec-critique.md](99-spec-critique.md) §7).
+- **Table rows:** One row per published **rehost** entry, in global `rank`
+  order (the same order as `catalog.entries`, before editorial pins). That
+  makes the heading "Popularity order, as shipped in the catalog" literally
+  true. Landing Page entries are never counted, so they get no row. The "Not
+  counted" card lists them instead.
+- **Table columns** (matching [Stats.tsx](../design/src/tshop/Stats.tsx)):
+  rank, app tile + name, category, **Installs · 7 days** (with the bar),
+  **Updates · 7 days**, and **All time** (installs + updates + unknown). The
+  7-day window is the 7 complete UTC days ending yesterday. Showing installs
+  and updates separately explains why an app with heavy update churn can rank
+  below one with fewer total downloads.
+- **Headline totals:** "Last 7 days" (all intents), "All time" (all intents),
+  and "Apps" (row count).
+- **`stats.json`:** The same rows (`packageName`, `rank`, `installs7d`,
+  `updates7d`, `allTime`) plus **weekly** per-version/variant series by intent.
+- **Low-volume suppression (k-anonymity):** Every published per-app or
+  per-version number with `1 <= n < 5` is displayed and emitted as `"<5"`. This
+  covers table cells, `stats.json` rows, and weekly series. Long-tail entries
+  therefore can't be read as near-real-time user activity
+  ([99-spec-critique.md](99-spec-critique.md) §7). Suppressed cells draw an
+  empty bar. Headline totals add up only the unsuppressed cells, so nobody can
+  recover a hidden value by subtracting. Ranking always uses raw counts.
 - Publishes the exact "What tShop knows about you" policy, notes that
   "completed" means piped to Cloudflare's edge, states that counts are
   approximate and exclude Landing Page + Privacy Mode downloads, and documents
@@ -473,14 +650,22 @@ Computed daily during publish from `tshop-analytics` joined to `tshop-catalog`:
    intent excluded from ranking).
 3. **7-day half-life EWMA:** Smooth `d(t)` with decay factor `α ≈ 0.094`
    (adopted from [04-oppo-research-lessons.md](04-oppo-research-lessons.md)).
-4. **Cold-start & Landing Page handling:**
-   - Rehosted apps that have been published fewer than 14 days **or** have fewer
-     than 25 cumulative installs use their curator `seed_rank` (blended into
-     the category order) instead of sinking to the bottom with `0`.
-   - **Landing Page** apps (which never generate tShop downloads) are
-     positioned permanently by their curator `seed_rank` (or `editorial_pin`).
-   - Category frame order on Browse follows aggregate 7-day install demand
-     across each category's entries, with a curator tie-breaker order.
+4. **Global order (`rank`):**
+   - *Warm* apps are rehosted apps published at least 14 days ago **and** with
+     at least 25 cumulative installs. Sort them by EWMA score, descending; ties
+     break by `seed_rank`, then `package_name`.
+   - *Seeded* apps are cold-start rehosted apps and all **Landing Page** apps
+     (which never generate tShop downloads). Insert each one at index
+     `seed_rank` in the warm list, clamped to the list length, in ascending
+     `seed_rank` order. This keeps new apps from sinking to the bottom with a
+     score of `0`.
+   - Number the result `rank` 1..N. This is the order of `catalog.entries`
+     and of the stats table.
+5. **Category frames:** Each frame's order is the global order filtered to
+   that category. Then any `editorial_pin` moves its app to that 1-based
+   position within the frame (pins never change `rank`). The frames
+   themselves always appear in the fixed order Emulators, Frontends, Games,
+   Utilities, so the Browse layout stays put from day to day.
 
 ---
 
@@ -503,7 +688,7 @@ executable code is ever stored in D1):
 | `html_links` | 1- or 2-hop HTML pages & directory listings (Dolphin, PPSSPP, ScummVM, Play!, RetroArch) | `hops: [{ url, linkRegex }]`, `versionRegex`, `versionRewrite` |
 | `direct_url` | Pinned stable download URLs | `url`, variant metadata |
 | `custom` | Escape hatch for unusual upstreams | `handlerName` referencing a code-reviewed TS module baked into `tshop-worker` |
-| `none` | Landing Page entries | Never polled for APKs |
+| `none` | Landing Page entries without a pollable upstream | Never polled; release info entered by the operator |
 
 Polling hygiene (from [04-oppo-research-lessons.md](04-oppo-research-lessons.md)):
 - Honest `User-Agent` (`tShop-Catalog-Watcher/1.0 (+https://tshop...)`); never
@@ -569,14 +754,42 @@ currently approved release, `tshop-worker` downloads the APK once and runs the
 - **New (`draft`) apps:** Never auto-promote; always require human approval in
   the Admin UI.
 
+### Landing Page releases
+
+Landing Page entries still show a release date and release notes on Detail,
+just without a version or size. Two ways to source them:
+
+- **Metadata-only polling:** Landing apps may use any adapter except `none`.
+  The watcher runs it in metadata-only mode: it reads version name, release
+  date, and changelog, but never downloads an APK. Only gate 11 (metadata
+  sanitization) applies. A new version inserts an `approved` release with no
+  `release_variants`, `version_code = NULL`, and `promoted_by = 'auto'`, then
+  republishes. Nothing executable is fetched, so there's nothing to
+  quarantine.
+- **Operator-entered:** With `source_type = 'none'`, the operator types the
+  version name, date, and notes in the Admin UI. With no release at all,
+  `release` is `null` and Detail shows the description only.
+
 ---
 
 ## Admin UI & agent-assisted ingest
 
 The Admin Web App (`admin.tshop...`) is served by the Admin Worker behind
 Cloudflare Access and reuses the React/TypeScript storefront components from
-[design/src/tshop/](../design/src/tshop/) (`Tile`, `Detail`, `Shelf`) for
-live, pixel-accurate curation previews.
+[design/src/tshop/](../design/src/tshop/) (`Tile`, `Shelf`, `Detail`,
+`ScreenshotViewer`) for live, pixel-accurate curation previews.
+
+These components are props-driven: `Detail` and `ScreenshotViewer` take an
+optional `art` prop, and only fall back to the sketch's sample `DETAIL_ART`
+when it is absent. The Admin UI adapts a draft into the design's `Entry` and
+`DetailArt` shapes:
+
+- `tile.backdropColors` and `backdropAngle` become the CSS `backdrop`: one
+  color is a solid fill, two become
+  `linear-gradient(<angle>deg, <c1> 0%, <c2> 100%)`.
+- Device-only fields are fixed for previews: `status: 'available'`, and no
+  installed version or progress.
+- `unmet` lists every capability label, so the curator sees the worst case.
 
 ### Adding a new app (agent-assisted ingest)
 
@@ -632,9 +845,9 @@ live, pixel-accurate curation previews.
 - **One-click rollback:** Swaps `approved_release_id` back to
   `previous_release_id` (mandatory audit reason) and dispatches `tshop-signer`.
 - **Policy & lifecycle controls:** Flip `rehost ↔ landing` (with explainer
-  text), adjust `seed_rank` / `editorial_pin`, delist an app (triggers GC),
-  manage tShop `client_releases` & `minClientVersionCode`, and publish optional
-  `announcements`.
+  text and `landing_url`), adjust `seed_rank` / `editorial_pin`, delist an app
+  (triggers GC), manage tShop `client_releases` & `minClientVersionCode`, and
+  add `capability_tags` (label + minimum client version).
 
 ---
 
@@ -703,11 +916,26 @@ be updated when those documents are edited:
 2. **[02-screens.md](02-screens.md) ("Catalog entry fields"):** Replace single
    "expected signing identity" with `allowedSigningCerts[]`, replace single
    latest changelog with the last 5 release changelogs, add `rehostMode` /
-   `landingReason`, add structured `tile` compositing fields (`backdropColors`,
-   `backdropAngle`, `iconScale`), and add the top-level `client` self-update
-   block.
+   `landing` (reason + publisher URL) and metadata-only Landing Page releases,
+   add structured `tile` compositing fields (`backdropColors`,
+   `backdropAngle`, `iconScale`), add `capabilityTags` labels, add the
+   top-level `client` self-update block and its Library tile, and note the
+   seed catalog bundled into client builds. Under "Public stats dashboard",
+   note the install/update columns and `<5` suppression.
 3. **[03-hosting-and-bandwidth.md](03-hosting-and-bandwidth.md) ("Recommended
    v1 path"):** Replace the €4–6 Hetzner CX pipeline/backup box with `boat.dev`
    ephemeral sandboxes (separate `tshop-worker` and `tshop-signer` snapshots)
    and Cloudflare-native D1 Time Travel + R2 daily snapshots; clarify N-1 APK
    retention (~$0.09/mo) for zero-404 deploys and instant rollback.
+
+## Deferred past v1
+
+No screen in [design/](../design/src/tshop/) draws these, and
+[02-screens.md](02-screens.md) doesn't add product scope, so they stay out of
+the v1 server:
+
+- **Catalog announcements** (the guarded in-app messages from
+  [04-oppo-research-lessons.md](04-oppo-research-lessons.md)). When added, they
+  come as an `announcements` table and catalog field together with a design.
+- **Per-app pre-filled problem reports** from Detail or failed queue items.
+  v1 users use About › Support.

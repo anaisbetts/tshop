@@ -1,34 +1,40 @@
 import type { CSSProperties } from 'react'
 
 import { PolicyCard } from './About.tsx'
-import { CATALOG, type Entry } from './catalog.ts'
+import { byId, type Entry } from './catalog.ts'
 import type { Mode } from './Chrome.tsx'
 
-/** Illustrative totals. The real page reads the same daily aggregates that order the grid. */
-const TOTALS: Record<string, { week: number; all: number }> = {
-  retroarch: { week: 4120, all: 61880 },
-  dolphin: { week: 3310, all: 52404 },
-  ppsspp: { week: 2875, all: 47112 },
-  lemuroid: { week: 1460, all: 18930 },
-  melonds: { week: 1302, all: 16288 },
-  'pixel-dungeon': { week: 988, all: 12406 },
-  flycast: { week: 870, all: 11953 },
-  mindustry: { week: 744, all: 9617 },
-  syncthing: { week: 610, all: 8022 },
-  scummvm: { week: 502, all: 7311 },
-  vita3k: { week: 455, all: 5208 },
-  supertuxkart: { week: 431, all: 6650 },
-  unciv: { week: 398, all: 4870 },
-  amaze: { week: 214, all: 3102 },
-  moonlight: { week: 190, all: 2766 },
-}
+/** Published counts from 1 to 4 show as "<5" so long-tail apps can't be read as live activity. */
+const SUPPRESS_BELOW = 5
+
+/**
+ * Illustrative rows in catalog rank order. The real page reads the same daily aggregates that order the grid.
+ * Vita3K is new, so it sits at its curator seed position with a suppressed count.
+ */
+const ROWS: { id: string; installs: number; updates: number; all: number }[] = [
+  { id: 'retroarch', installs: 3020, updates: 1100, all: 61880 },
+  { id: 'dolphin', installs: 2410, updates: 900, all: 52404 },
+  { id: 'ppsspp', installs: 1650, updates: 1225, all: 47112 },
+  { id: 'lemuroid', installs: 980, updates: 480, all: 18930 },
+  { id: 'melonds', installs: 1010, updates: 292, all: 16288 },
+  { id: 'pixel-dungeon', installs: 720, updates: 268, all: 12406 },
+  { id: 'flycast', installs: 640, updates: 230, all: 11953 },
+  { id: 'mindustry', installs: 410, updates: 334, all: 9617 },
+  { id: 'syncthing', installs: 450, updates: 160, all: 8022 },
+  { id: 'scummvm', installs: 380, updates: 122, all: 7311 },
+  { id: 'vita3k', installs: 2, updates: 0, all: 3 },
+  { id: 'supertuxkart', installs: 320, updates: 111, all: 6650 },
+  { id: 'unciv', installs: 300, updates: 98, all: 4870 },
+  { id: 'amaze', installs: 160, updates: 54, all: 3102 },
+  { id: 'moonlight', installs: 150, updates: 40, all: 2766 },
+]
 
 /** First-party web page, not an in-app screen. The whole dataset, no login. Opened from About. */
 export function Stats({ mode = 'day' }: { mode?: Mode }) {
-  const rows = CATALOG.filter((entry) => TOTALS[entry.id]).sort((a, b) => TOTALS[b.id].week - TOTALS[a.id].week)
-  const week = rows.reduce((sum, entry) => sum + TOTALS[entry.id].week, 0)
-  const all = rows.reduce((sum, entry) => sum + TOTALS[entry.id].all, 0)
-  const peak = TOTALS[rows[0].id].week
+  const rows = ROWS.map((row) => ({ ...row, entry: byId(row.id) }))
+  const week = rows.reduce((sum, row) => sum + shown(row.installs) + shown(row.updates), 0)
+  const all = rows.reduce((sum, row) => sum + shown(row.all), 0)
+  const peak = Math.max(...rows.map((row) => shown(row.installs)))
 
   return (
     <div className="ts-root ts-web" data-mode={mode}>
@@ -57,28 +63,30 @@ export function Stats({ mode = 'day' }: { mode?: Mode }) {
                 <th>#</th>
                 <th>App</th>
                 <th>Category</th>
-                <th className="num">Last 7 days</th>
+                <th className="num">Installs · 7 days</th>
+                <th className="num">Updates · 7 days</th>
                 <th className="num">All time</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((entry, index) => (
-                <tr key={entry.id}>
+              {rows.map((row, index) => (
+                <tr key={row.id}>
                   <td className="rank">{index + 1}</td>
                   <td>
                     <span className="ts-web__app">
-                      <MiniTile entry={entry} />
-                      {entry.name}
+                      <MiniTile entry={row.entry} />
+                      {row.entry.name}
                     </span>
                   </td>
-                  <td className="muted">{entry.category}</td>
+                  <td className="muted">{row.entry.category}</td>
                   <td className="num">
                     <span className="ts-web__bar">
-                      <span style={{ width: `${(TOTALS[entry.id].week / peak) * 100}%` }} />
+                      <span style={{ width: `${(shown(row.installs) / peak) * 100}%` }} />
                     </span>
-                    {format(TOTALS[entry.id].week)}
+                    {format(row.installs)}
                   </td>
-                  <td className="num">{format(TOTALS[entry.id].all)}</td>
+                  <td className="num muted">{format(row.updates)}</td>
+                  <td className="num">{format(row.all)}</td>
                 </tr>
               ))}
             </tbody>
@@ -86,6 +94,14 @@ export function Stats({ mode = 'day' }: { mode?: Mode }) {
         </section>
         <aside className="ts-web__side">
           <PolicyCard />
+          <section className="ts-card">
+            <h3>How the order works</h3>
+            <p>
+              Installs count fully and updates count a quarter, smoothed over about a week, so frequent releases don’t
+              push an app up. New apps start at a position the curators pick until they have two weeks of downloads.
+              Counts from 1 to 4 show as “&lt;5” and are left out of the totals.
+            </p>
+          </section>
           <section className="ts-card">
             <h3>Not counted</h3>
             <p>
@@ -117,6 +133,14 @@ function MiniTile({ entry }: { entry: Entry }) {
   )
 }
 
+function shown(value: number): number {
+  return isSuppressed(value) ? 0 : value
+}
+
+function isSuppressed(value: number): boolean {
+  return value >= 1 && value < SUPPRESS_BELOW
+}
+
 function format(value: number): string {
-  return value.toLocaleString('en-US')
+  return isSuppressed(value) ? `<${SUPPRESS_BELOW}` : value.toLocaleString('en-US')
 }

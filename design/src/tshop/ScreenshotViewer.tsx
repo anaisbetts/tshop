@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
-import { DETAIL_ART, type Entry } from './catalog.ts'
+import { DETAIL_ART, type DetailArt, type Entry } from './catalog.ts'
 import { Legend, Pad, Screen, StatusCluster, type Canvas, type Mode } from './Chrome.tsx'
 
 export type ScreenshotViewerProps = {
   entry: Entry
+  /** Defaults to the sample art for `entry.id`. */
+  art?: DetailArt
   canvas?: Canvas
   mode?: Mode
   online?: boolean
@@ -13,8 +15,16 @@ export type ScreenshotViewerProps = {
 }
 
 /** Fullscreen from the Detail strip. Left / right page through the set; Back returns to Detail. */
-export function ScreenshotViewer({ entry, canvas = 'thor', mode = 'day', online = true, initialIndex = 0, onBack }: ScreenshotViewerProps) {
-  const shots = DETAIL_ART[entry.id]?.shots ?? []
+export function ScreenshotViewer({
+  entry,
+  art = DETAIL_ART[entry.id],
+  canvas = 'thor',
+  mode = 'day',
+  online = true,
+  initialIndex = 0,
+  onBack,
+}: ScreenshotViewerProps) {
+  const shots = art?.shots ?? []
   const [index, setIndex] = useState(Math.min(initialIndex, Math.max(0, shots.length - 1)))
   const rootRef = useRef<HTMLDivElement>(null)
   const shot = shots[index]

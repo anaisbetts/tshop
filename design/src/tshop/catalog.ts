@@ -31,7 +31,7 @@ export type Entry = {
   version: string
   released: string
   size: string
-  /** Square tile backdrop. The catalog pipeline would bake this into the tile PNG. */
+  /** Square tile backdrop. The catalog ships 1–2 colours and an angle; the client composites them live. */
   backdrop: string
   /** Icon scale inside the square: >1 crops an icon's own rounded corners. */
   scale: number

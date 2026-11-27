@@ -12,8 +12,9 @@ are in `src/tshop/art/SOURCES.md`.
 
 - **Square tiles that read as a set.** Every icon sits on its own backdrop
   colour with a shared 18 dp radius, a glossy top sheen and the same shadow.
-  The catalog pipeline would bake this into the tile PNG. Here it is a
-  `backdrop` and a `scale` per entry in `catalog.ts`.
+  The client composites the tile live from the catalog's backdrop colours,
+  angle and icon scale, so nothing is pre-baked. Here it is a `backdrop` and
+  a `scale` per entry in `catalog.ts`.
 - **One accent.** tShop orange (`#ff7a1a`, a nod to the 3DS eShop) is used
   for the brand mark, focus, primary actions and update badges. Everything
   else is ink on a cool, pinstriped wallpaper.
