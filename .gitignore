@@ -8,3 +8,9 @@ dist/
 
 # FVM Version Cache
 .fvm/
+
+# Android signing keystores
+*.jks
+*.keystore
+
+skills/
