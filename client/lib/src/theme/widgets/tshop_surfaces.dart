@@ -2,6 +2,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:tshop/src/theme/tshop_tokens.dart';
 import 'package:tshop/src/theme/widgets/tshop_chip.dart';
 
+const double _frameTopPadding = 8;
+const double _frameBottomPadding = 12;
+const double _frameHorizontalPadding = 14;
+const double _frameHeaderHeight = 22;
+const double _frameHeaderSpacing = 15;
+
 /// Frosted shelf panel: a labelled, column-major grid of tiles.
 class TshopFrame extends StatelessWidget {
   /// Creates a frame. [count] defaults to the number of [tiles].
@@ -14,6 +20,13 @@ class TshopFrame extends StatelessWidget {
     this.tileSize = TshopMetrics.tile,
     this.gap = TshopMetrics.gap,
   });
+
+  /// Vertical height consumed by padding, shelf header, and header-to-grid gap.
+  static const double chromeHeight =
+      _frameTopPadding +
+      _frameHeaderHeight +
+      _frameHeaderSpacing +
+      _frameBottomPadding;
 
   /// Category or state name.
   final String label;
@@ -49,7 +62,12 @@ class TshopFrame extends StatelessWidget {
         ),
     ];
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 9, 12, 12),
+      padding: const EdgeInsets.fromLTRB(
+        _frameHorizontalPadding,
+        _frameTopPadding,
+        _frameHorizontalPadding,
+        _frameBottomPadding,
+      ),
       decoration: BoxDecoration(
         color: tokens.shelf,
         borderRadius: BorderRadius.circular(TshopMetrics.shelfRadius),
@@ -58,10 +76,10 @@ class TshopFrame extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 8,
+        spacing: _frameHeaderSpacing,
         children: [
           SizedBox(
-            height: 22,
+            height: _frameHeaderHeight,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Row(

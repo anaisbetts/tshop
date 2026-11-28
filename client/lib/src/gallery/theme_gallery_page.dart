@@ -670,12 +670,12 @@ class _LegendSection extends StatelessWidget {
       children: [
         TshopLegend(
           left: [
-            (button: PadButton.dpad, label: 'Move'),
-            (button: PadButton.a, label: 'Open'),
+            LegendItem(button: PadButton.dpad, label: 'Move'),
+            LegendItem(button: PadButton.a, label: 'Open'),
           ],
           right: [
-            (button: PadButton.y, label: 'Search'),
-            (button: PadButton.b, label: 'Back'),
+            LegendItem(button: PadButton.y, label: 'Search'),
+            LegendItem(button: PadButton.b, label: 'Back'),
           ],
           middle: TshopDownloadsPill(
             label: 'melonDS 62%',
@@ -685,10 +685,10 @@ class _LegendSection extends StatelessWidget {
         ),
         TshopLegend(
           left: [
-            (button: PadButton.dpad, label: 'Move'),
-            (button: PadButton.a, label: 'Change'),
+            LegendItem(button: PadButton.dpad, label: 'Move'),
+            LegendItem(button: PadButton.a, label: 'Change'),
           ],
-          right: [(button: PadButton.b, label: 'Back')],
+          right: [LegendItem(button: PadButton.b, label: 'Back')],
         ),
       ],
     );
@@ -756,10 +756,10 @@ class _BrowseMock extends HookWidget {
                   ),
                   const TshopLegend(
                     left: [
-                      (button: PadButton.dpad, label: 'Move'),
-                      (button: PadButton.a, label: 'Details'),
+                      LegendItem(button: PadButton.dpad, label: 'Move'),
+                      LegendItem(button: PadButton.a, label: 'Details'),
                     ],
-                    right: [(button: PadButton.y, label: 'Search')],
+                    right: [LegendItem(button: PadButton.y, label: 'Search')],
                     middle: TshopDownloadsPill(
                       label: 'melonDS 62%',
                       progress: 0.62,

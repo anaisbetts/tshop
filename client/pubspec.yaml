@@ -8,6 +8,8 @@ environment:
 
 dependencies:
   cached_network_image: ^4.0.0
+  crypto: ^3.0.6
+  cryptography: ^2.7.0
   dio: ^5.11.0
   flutter:
     sdk: flutter
@@ -16,9 +18,11 @@ dependencies:
   go_router: ^18.0.0
   hooks_riverpod: ^3.4.2
   material_ui: ^1.11.1
+  path_provider: ^2.1.5
   talker: ^5.1.20
   talker_dio_logger: ^5.1.20
   talker_flutter: ^5.1.20
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
