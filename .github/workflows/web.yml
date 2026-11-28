@@ -21,19 +21,34 @@ permissions:
 jobs:
   analyze-and-build:
     name: Analyze and build web
-    runs-on: ubuntu-latest
+    runs-on: boat
     timeout-minutes: 20
     defaults:
       run:
         working-directory: client
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+
+      - name: Install FVM
+        working-directory: ${{ github.workspace }}
+        run: |
+          curl -fsSL https://fvm.app/install.sh | bash
+          echo "$HOME/fvm/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/cache@v4
         with:
-          channel: stable
-          flutter-version-file: client/.fvmrc
-          cache: true
-      - run: flutter pub get
-      - run: flutter analyze --fatal-infos
-      - run: flutter test
-      - run: flutter build web --no-wasm-dry-run
+          path: |
+            ~/fvm/versions
+            ~/.pub-cache
+          key: ${{ runner.os }}-fvm-${{ hashFiles('client/.fvmrc', 'client/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-fvm-
+
+      - name: Install Flutter SDK
+        run: fvm install
+
+      - run: ./flutterw pub get
+      - run: ./dartw format --set-exit-if-changed .
+      - run: ./flutterw analyze --fatal-infos
+      - run: ./flutterw test
+      - run: ./flutterw build web --no-wasm-dry-run
