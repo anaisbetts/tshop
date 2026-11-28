@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'client/**'
+      - 'server/package.json'
       - '.github/workflows/client.yml'
   push:
     branches: [main]
     paths:
       - 'client/**'
+      - 'server/package.json'
       - '.github/workflows/client.yml'
   workflow_dispatch:
 
@@ -29,6 +31,9 @@ jobs:
         working-directory: client
     steps:
       - uses: actions/checkout@v4
+        with:
+          # versionCode is the commit count.
+          fetch-depth: 0
 
       - name: Install FVM
         working-directory: ${{ github.workspace }}

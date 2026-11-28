@@ -21,12 +21,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = gitCommitCount()
+        versionName = serverPackageVersion()
     }
 
     signingConfigs {
@@ -67,4 +63,17 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+// Needs full history: a shallow clone makes the count (and so versionCode) go backwards.
+fun gitCommitCount(): Int =
+    providers.exec { commandLine("git", "rev-list", "--count", "HEAD") }
+        .standardOutput.asText.get().trim().toInt()
+
+fun serverPackageVersion(): String {
+    val json = groovy.json.JsonSlurper().parseText(
+        rootProject.file("../../server/package.json").readText()
+    ) as Map<*, *>
+    return (json["version"] as? String)?.takeIf { it.isNotBlank() }
+        ?: error("No \"version\" field in server/package.json")
 }
