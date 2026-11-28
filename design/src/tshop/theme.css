@@ -206,8 +206,8 @@
 }
 
 .ts-pad--a { background: var(--ts-pad-a); }
-.ts-pad--b { background: var(--ts-pad-b); color: #3b2c00; }
-.ts-pad--x { background: var(--ts-pad-x); }
+.ts-pad--b { background: var(--ts-pad-b); }
+.ts-pad--x { background: var(--ts-pad-x); color: #3b2c00; }
 .ts-pad--y { background: var(--ts-pad-y); }
 
 .ts-pad--dpad {
@@ -229,7 +229,7 @@
   --ts-pad-y: #f2b705;
 }
 
-.ts-root[data-pad='xbox'] .ts-pad--b { color: #fff; }
+.ts-root[data-pad='xbox'] .ts-pad--x { color: #fff; }
 .ts-root[data-pad='xbox'] .ts-pad--y { color: #3b2c00; }
 
 .ts-diamond {

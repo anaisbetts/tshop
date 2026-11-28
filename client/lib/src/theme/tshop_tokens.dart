@@ -22,20 +22,20 @@ abstract final class TshopBrand {
   /// Failed, missing hardware, offline glyph.
   static const bad = Color(0xFFEC4D4D);
 
-  /// Face button A.
+  /// Face button A (red).
   static const padA = Color(0xFFEC4D4D);
 
-  /// Face button B.
-  static const padB = Color(0xFFF2B705);
+  /// Face button B (green).
+  static const padB = Color(0xFF22B573);
 
-  /// Ink on face button B.
-  static const padBInk = Color(0xFF3B2C00);
+  /// Face button X (yellow).
+  static const padX = Color(0xFFF2B705);
 
-  /// Face button X.
-  static const padX = Color(0xFF3D7CF2);
+  /// Ink on the yellow face button X.
+  static const padXInk = Color(0xFF3B2C00);
 
-  /// Face button Y.
-  static const padY = Color(0xFF22B573);
+  /// Face button Y (blue).
+  static const padY = Color(0xFF3D7CF2);
 
   /// Logo and action-tile fill.
   static const accentGradient = LinearGradient(

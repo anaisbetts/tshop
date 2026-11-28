@@ -50,9 +50,9 @@
   --ts-good: #22b573;
   --ts-bad: #ec4d4d;
   --ts-pad-a: #ec4d4d;
-  --ts-pad-b: #f2b705;
-  --ts-pad-x: #3d7cf2;
-  --ts-pad-y: #22b573;
+  --ts-pad-b: #22b573;
+  --ts-pad-x: #f2b705;
+  --ts-pad-y: #3d7cf2;
   --ts-pad-neutral: #3a4152;
 
   --ts-font: 'M PLUS Rounded 1c', 'Nunito', system-ui, sans-serif;

@@ -43,10 +43,10 @@ class VariantChoiceDialog extends HookConsumerWidget {
   /// Compatible APK variants presented as choices.
   final List<CatalogVariant> variants;
 
-  /// Invoked when the user confirms a variant via gamepad `[A]` or tap.
+  /// Invoked when the user confirms a variant via gamepad confirm or tap.
   final ValueChanged<CatalogVariant> onSelected;
 
-  /// Invoked when the user dismisses the dialog via `[B]` or backdrop tap.
+  /// Invoked when the user dismisses the dialog via back or backdrop tap.
   final VoidCallback onCancel;
 
   /// Initially highlighted variant index.

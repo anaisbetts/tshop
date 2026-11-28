@@ -60,13 +60,13 @@ enum GamepadAction {
 
 /// Controller face-button glyph set shown in on-screen legends.
 ///
-/// Confirm is always `A` and back is always `B` in both layouts; this setting
-/// selects which physical glyph convention the HUD labels follow.
+/// Input mapping is unchanged. Nintendo (default, AYN Thor) prints B/A/Y/X
+/// for confirm/back/secondary/search; Xbox prints A/B/X/Y.
 enum PadButtonLayout {
-  /// Nintendo layout (default, matching the design system).
+  /// Nintendo Switch layout: B confirms, A cancels, Y is left, X is top.
   nintendo,
 
-  /// Xbox layout.
+  /// Xbox layout: A confirms, B cancels, X is left, Y is top.
   xbox,
 }
 

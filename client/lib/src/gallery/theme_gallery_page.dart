@@ -197,7 +197,9 @@ class _PadSection extends StatelessWidget {
       children: [
         for (final button in PadButton.values)
           _Specimen(
-            label: button == PadButton.dpad ? 'D-pad' : button.label,
+            label: button == PadButton.dpad
+                ? 'D-pad'
+                : visualPadButton(button, PadLayoutScope.of(context)).label,
             child: PadGlyph(button, size: 24),
           ),
       ],

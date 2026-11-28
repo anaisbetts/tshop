@@ -56,7 +56,7 @@ class TshopButton extends HookWidget {
   /// Whether the d-pad cursor is on this button.
   final bool focused;
 
-  /// Called on tap / A. Ignored for [TshopButtonTone.disabled].
+  /// Called on tap / confirm. Ignored for [TshopButtonTone.disabled].
   final VoidCallback? onPressed;
 
   @override

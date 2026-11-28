@@ -82,7 +82,7 @@ class TshopTopBar extends StatelessWidget {
   /// Drives the Wi-Fi glyph.
   final bool online;
 
-  /// Show the Y-to-search pill.
+  /// Show the search pill.
   final bool showSearch;
 
   /// Active search query; turns the pill dark.

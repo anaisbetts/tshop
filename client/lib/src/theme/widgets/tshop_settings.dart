@@ -68,7 +68,7 @@ class TshopSettingsRow extends StatelessWidget {
   /// Whether the d-pad cursor is on this row.
   final bool focused;
 
-  /// Called on tap / A.
+  /// Called on tap / confirm.
   final VoidCallback? onTap;
 
   @override
