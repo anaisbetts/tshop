@@ -1,0 +1,33 @@
+{
+  "name": "tshop-dev-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev --host 0.0.0.0 --port 8787",
+    "dev:wrangler": "wrangler dev --config wrangler.fallback.jsonc --ip 0.0.0.0 --port 8787",
+    "build": "vp build",
+    "deploy": "vp exec void deploy --platform cloudflare",
+    "prepare:void": "vp exec void prepare",
+    "check": "vp check",
+    "fmt": "vp fmt",
+    "lint": "vp lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vp test run",
+    "db:migrate:catalog": "wrangler d1 migrations apply tshop-catalog --local --config wrangler.fallback.jsonc",
+    "db:migrate:analytics": "wrangler d1 migrations apply tshop-analytics --local --config wrangler.fallback.jsonc",
+    "db:migrate": "bun run db:migrate:catalog && bun run db:migrate:analytics",
+    "seed": "bun run scripts/seed.ts"
+  },
+  "dependencies": {
+    "void": "^1.12.2"
+  },
+  "devDependencies": {
+    "@cloudflare/oxlint-config": "^0.2.0",
+    "@cloudflare/workers-types": "^4.20260401.0",
+    "@types/bun": "latest",
+    "@types/node": "^26.6.11",
+    "typescript": "^5.9.2",
+    "vite-plus": "^1.8.0",
+    "wrangler": "^4.129.0"
+  }
+}

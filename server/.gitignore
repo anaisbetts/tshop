@@ -1,0 +1,7 @@
+node_modules/
+.wrangler/
+.seed-cache/
+.void/
+.void-wrangler.jsonc
+.cloudflare/
+dist/
